@@ -22,7 +22,6 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import image from "../assets/gadget.png";
-// import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import sxaint_promo_hp from "../assets/mp4_files/sxaint_promo_hp.mp4.mp4";
 
