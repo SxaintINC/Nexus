@@ -1,29 +1,29 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  MessageCircle,
-  Banknote,
-  Info,
-  Mail,
-  DoorOpen,
-  Rocket,
-  Sparkles,
-  Menu,
-  X,
   ArrowRight,
+  Banknote,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Mail as MailIcon,
-  Lock,
-  User,
-  UserCircle,
+  DoorOpen,
   Eye,
   EyeOff,
+  Info,
+  Lock,
+  Mail,
+  Mail as MailIcon,
+  Menu,
+  MessageCircle,
+  Rocket,
+  Sparkles,
+  User,
+  UserCircle,
+  X,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import image from "../assets/gadget.png";
 import logo from "../assets/logo.png";
 import sxaint_promo_hp from "../assets/mp4_files/sxaint_promo_hp.mp4.mp4";
-import image from "../assets/gadget.png";
 
 /* ─── Data ───────────────────────────────────────────────────────── */
 const FEATURES = [
@@ -752,7 +752,7 @@ function TextContentPane({
           (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
         }}
       >
-        Get Started <Rocket size={16} />
+        Get Started for free<Rocket size={16} />
       </button>
     </div>
   );
@@ -1254,7 +1254,7 @@ function HomepageContent({ onGetStarted }: { onGetStarted: () => void }) {
             onClick={onGetStarted}
             className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-[#007bff] hover:bg-[#0056b3] transition-all duration-200 hover:scale-105 active:scale-95"
           >
-            Get Started <DoorOpen size={16} />
+            Get Started for free<DoorOpen size={16} />
           </button>
         </div>
 
@@ -1299,7 +1299,7 @@ function HomepageContent({ onGetStarted }: { onGetStarted: () => void }) {
               }}
               className="flex items-center justify-center gap-2 mt-4 px-6 py-3 rounded-xl text-white bg-[#007bff] hover:bg-[#0056b3] font-semibold"
             >
-              Get Started <ArrowRight size={18} />
+              Get Started for free<ArrowRight size={18} />
             </button>
           </nav>
         </div>
