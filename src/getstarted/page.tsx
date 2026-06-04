@@ -5,8 +5,11 @@ import { useLoader } from "../Loader/loadercontext";
 
 /* COLORS */
 
-const GREEN = "#1F4D3E";
-const GREEN_BRIGHT = "#2E6F5A";
+const BLACK = "#000000";
+const GREY = "#4a4848";
+const fg = "#fff";
+const tx =
+  "color 0.35s ease, background 0.35s ease, border-color 0.35s ease, opacity 0.25s ease";
 
 function useIsMobile(max = 900) {
   const [m, setM] = useState(false);
@@ -160,22 +163,16 @@ py-8
         >
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center gap-4 mb-6 flex-shrink-0">
-              <div
-                className="
-w-12
-h-12
-rounded-xl
-bg-[#1F4D3E]
-flex
-items-center
-justify-center
-font-bold
-"
-              >
-                E
-              </div>
-
-              <h2 className="text-xl font-semibold">Examly</h2>
+              <span
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderTop: `13px solid ${fg}`,
+                  borderLeft: "13px solid transparent",
+                  transition: tx,
+                }}
+              />{" "}
+              <h2 className="text-xl font-semibold">examly</h2>
             </div>
 
             {/* Video Section - fills remaining space */}
@@ -187,6 +184,9 @@ font-bold
                   loop
                   muted
                   playsInline
+                  style={{
+                    cursor: "grab",
+                  }}
                 >
                   <source src="/video/teacher.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
@@ -270,14 +270,17 @@ text-gray-400
 hover:text-black
 transition-colors
 "
+              style={{
+                cursor: "pointer",
+              }}
             >
               ×
             </button>
 
-            <h2 className="text-4xl font-semibold">Get Started with Examly</h2>
+            <h2 className="text-4xl font-semibold">Your Journey Starts Here</h2>
 
             <p className="mt-3 text-gray-500">
-              Fill your details and we'll reach out within 24 hours.
+              Schedule a quick session and see how everything works.
             </p>
           </div>
 
@@ -539,16 +542,12 @@ hover:opacity-90
 transition-opacity
 "
                   style={{
-                    background: `linear-gradient(
-135deg,
-${GREEN_BRIGHT},
-${GREEN}
-)`,
-
+                    background: `linear-gradient(135deg,${BLACK},${GREY})`,
                     boxShadow: "0 12px 32px rgba(31,77,62,.25)",
+                    cursor: "pointer",
                   }}
                 >
-                  Book Personal Demo →
+                  Book Demo ›
                 </button>
               </form>
             )}
