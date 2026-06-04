@@ -199,7 +199,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
     if (alert.type && alert.message) {
       const timer = setTimeout(() => {
         setAlert({ type: null, message: "" });
-      }, 5000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [alert]);
@@ -234,7 +234,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
     }
   };
 
-  // Helper to update role-specific fields
+  // Helper to update role-specific fields - FIXED VERSION
   const updateRoleData = <
     K extends keyof SchoolAdminData | keyof TutorData | keyof ExamCandidateData,
   >(
@@ -242,10 +242,21 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
     value: any,
   ) => {
     if (formState.roleData) {
-      setFormState((prev) => ({
-        ...prev,
-        roleData: { ...prev.roleData, [field]: value },
-      }));
+      setFormState((prev) => {
+        if (!prev.roleData) return prev;
+
+        // Create updated roleData with proper type safety
+        const updatedRoleData = {
+          ...prev.roleData,
+          [field]: value,
+        } as SchoolAdminData | TutorData | ExamCandidateData;
+
+        return {
+          ...prev,
+          roleData: updatedRoleData,
+        };
+      });
+
       // Clear error for this field if it exists
       if (errors[field as string]) {
         setErrors((prev) => {
@@ -532,7 +543,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
       setTimeout(() => {
         setSubmitted(false);
         handleClose();
-      }, 4000);
+      }, 40000);
     } catch (error: any) {
       console.error("Registration error:", error);
       showAlert("error", "Something went wrong, try again");
@@ -948,11 +959,11 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
   return (
     <div className="fixed inset-0 z-[1001] flex bg-white overflow-hidden">
-      {/* Toast Alert Container */}
+      {/* Toast Alert Container - Bottom Right Corner */}
       {alert.type && alert.message && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[1200] w-full max-w-md px-4">
+        <div className="fixed bottom-6 right-6 z-[1200] w-full max-w-md">
           <div
-            className={`rounded-xl shadow-lg p-4 flex items-center justify-between animate-slide-down ${
+            className={`rounded-xl shadow-lg p-4 flex items-center justify-between animate-slide-up ${
               alert.type === "success"
                 ? "bg-green-50 border border-green-200 text-green-800"
                 : alert.type === "error"
@@ -1180,7 +1191,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
                     boxShadow: "0 12px 32px rgba(0,0,0,.25)",
                   }}
                 >
-                  Book Demo →
+                  Book Demo ›
                 </button>
               </div>
             )}
@@ -1264,27 +1275,27 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
       {/* Custom Scrollbar & Animation Styles */}
       <style>{`
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
-        .custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.15) transparent; }
-        
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-slide-down {
-          animation: slideDown 0.3s ease-out;
-        }
-      `}</style>
+  .custom-scroll::-webkit-scrollbar { width: 4px; }
+  .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+  .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+  .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+  .custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.15) transparent; }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+`}</style>
     </div>
   );
 }
