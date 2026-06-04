@@ -1,18 +1,25 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Landing from "./landing-page/page";
-import Home from "./home/page";
-import Getstarted from "./getstarted/page";
+import RegistrationForm from "./getstarted/page";
+
+import RouteLoader from "./Loader/routerLoader";
+
+import { LoaderProvider } from "./Loader/loadercontext";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/getstarted" element={<Getstarted />} />
-      </Routes>
-    </BrowserRouter>
+    <LoaderProvider>
+      <BrowserRouter>
+        <RouteLoader />
+
+        <Routes>
+          <Route path="/" element={<Landing />} />
+
+          <Route path="/getstarted" element={<RegistrationForm />} />
+        </Routes>
+      </BrowserRouter>
+    </LoaderProvider>
   );
 }
 

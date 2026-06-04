@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { gsap } from "gsap";
+import { useLoader } from "../Loader/loadercontext";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -11,16 +13,16 @@ gsap.registerPlugin(ScrollTrigger);
 const VIDEOS = ["/video/student.mp4", "/video/road.mp4", "/video/teacher.mp4"];
 
 // ── EDGE-DETECT SVG FILTER ────────────────────────────────────────────────────
-// Real-time outline extraction: a duplicate <video> is run through this SVG
-// filter (Laplacian convolution → luminance-to-alpha → white-tint), then
-// composited over the original with `mix-blend-mode: screen`, producing the
-// live "skeleton" effect that traces whatever is in the underlying footage.
-
 function EdgeFilterDefs() {
   return (
     <svg
       aria-hidden
-      style={{ position: "absolute", width: 0, height: 0, pointerEvents: "none" }}
+      style={{
+        position: "absolute",
+        width: 0,
+        height: 0,
+        pointerEvents: "none",
+      }}
     >
       <defs>
         <filter
@@ -31,21 +33,17 @@ function EdgeFilterDefs() {
           height="100%"
           colorInterpolationFilters="sRGB"
         >
-          {/* desaturate to luminance */}
           <feColorMatrix type="saturate" values="0" />
-          {/* boost contrast so edges pop */}
           <feComponentTransfer>
             <feFuncR type="gamma" amplitude="1" exponent="0.55" offset="0" />
             <feFuncG type="gamma" amplitude="1" exponent="0.55" offset="0" />
             <feFuncB type="gamma" amplitude="1" exponent="0.55" offset="0" />
           </feComponentTransfer>
-          {/* Laplacian — fires on high-contrast neighbourhoods */}
           <feConvolveMatrix
             order="3"
             kernelMatrix="-1 -1 -1 -1 8 -1 -1 -1 -1"
             preserveAlpha="false"
           />
-          {/* Force RGB to white, set alpha = amplified edge intensity */}
           <feColorMatrix
             type="matrix"
             values="
@@ -76,14 +74,15 @@ const NAV_LINKS = ["Products", "Solutions", "Research", "Resources"];
 
 // ── MEGA MENU DATA ────────────────────────────────────────────────────────────
 
-type MenuSection = { heading?: string; links: { label: string; primary?: boolean }[] };
+type MenuSection = {
+  heading?: string;
+  links: { label: string; primary?: boolean }[];
+};
 type MenuMedia =
   | { kind: "feature"; image: string; tag?: string; title?: string }
   | { kind: "cards"; items: { image: string; title: string; tag: string }[] };
 type MegaMenu = { columns: MenuSection[][]; media: MenuMedia };
 
-// Stable Picsum URLs, seeded so the same image appears every time. Swap for
-// your own brand photography by replacing the URLs below.
 const MENU_IMG = (seed: string, w = 1000, h = 720) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
@@ -122,7 +121,12 @@ const MEGA_MENUS: Record<string, MegaMenu> = {
         },
       ],
     ],
-    media: { kind: "feature", image: MENU_IMG("examly-products"), tag: "FEATURED", title: "Question Bank 2.0 — now with AI-assisted authoring" },
+    media: {
+      kind: "feature",
+      image: MENU_IMG("examly-products"),
+      tag: "FEATURED",
+      title: "Question Bank 2.0 — now with AI-assisted authoring",
+    },
   },
   Solutions: {
     columns: [
@@ -150,7 +154,12 @@ const MEGA_MENUS: Record<string, MegaMenu> = {
         },
       ],
     ],
-    media: { kind: "feature", image: MENU_IMG("examly-solutions"), tag: "CASE STUDY", title: "How Babcock University runs 5,000-student finals on Examly" },
+    media: {
+      kind: "feature",
+      image: MENU_IMG("examly-solutions"),
+      tag: "CASE STUDY",
+      title: "How Babcock University runs 5,000-student finals on Examly",
+    },
   },
   Research: {
     columns: [
@@ -168,7 +177,12 @@ const MEGA_MENUS: Record<string, MegaMenu> = {
         },
       ],
     ],
-    media: { kind: "feature", image: MENU_IMG("examly-research"), tag: "LATEST", title: "Toward fairer adaptive assessment — Examly Labs Q2 report" },
+    media: {
+      kind: "feature",
+      image: MENU_IMG("examly-research"),
+      tag: "LATEST",
+      title: "Toward fairer adaptive assessment — Examly Labs Q2 report",
+    },
   },
   Resources: {
     columns: [
@@ -197,16 +211,21 @@ const MEGA_MENUS: Record<string, MegaMenu> = {
     media: {
       kind: "cards",
       items: [
-        { image: MENU_IMG("examly-labs", 700, 900), title: "Introducing Examly Labs", tag: "RESEARCH" },
-        { image: MENU_IMG("examly-partner", 700, 900), title: "How Babcock deploys CBT that actually works", tag: "COMPANY" },
+        {
+          image: MENU_IMG("examly-labs", 700, 900),
+          title: "Introducing Examly Labs",
+          tag: "RESEARCH",
+        },
+        {
+          image: MENU_IMG("examly-partner", 700, 900),
+          title: "How Babcock deploys CBT that actually works",
+          tag: "COMPANY",
+        },
       ],
     },
   },
 };
 
-// Testimonial card. `featured: true` = bigger pull-quote treatment.
-// `span` = how many of the 12-col grid columns to occupy at desktop sizes.
-// `avatar` = portrait URL (pravatar.cc gives deterministic placeholder faces).
 type Testimonial = {
   quote: string;
   name: string;
@@ -222,7 +241,8 @@ const AVATAR = (seed: string) => `https://i.pravatar.cc/200?u=${seed}`;
 
 const TESTIMONIALS: Testimonial[] = [
   {
-    quote: "It's the first system my teachers actually want to use. Authoring a paper is faster than typing it in Word.",
+    quote:
+      "It's the first system my teachers actually want to use. Authoring a paper is faster than typing it in Word.",
     name: "Mrs. Okeke",
     role: "Principal, Day Waterman College",
     bg: "#1F4D3E",
@@ -232,7 +252,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-okeke"),
   },
   {
-    quote: "Examly cut our marking time by 80%. We went from a 2-week turnaround on mocks to same-day results — across 1,400 students.",
+    quote:
+      "Examly cut our marking time by 80%. We went from a 2-week turnaround on mocks to same-day results — across 1,400 students.",
     name: "Mrs. Adebayo",
     role: "Exams Coordinator, Greensprings School",
     bg: "#EFEEEA",
@@ -241,7 +262,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-adebayo"),
   },
   {
-    quote: "I went from D7 to B2 in Chemistry in one term. The instant feedback after every drill is what changed it.",
+    quote:
+      "I went from D7 to B2 in Chemistry in one term. The instant feedback after every drill is what changed it.",
     name: "David Okafor",
     role: "SS3 Student, Loyola Jesuit College",
     bg: "#3A6F84",
@@ -250,7 +272,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-david"),
   },
   {
-    quote: "Setting up our first paperless mock took half a day. Three months later, every JS3 exam runs on Examly.",
+    quote:
+      "Setting up our first paperless mock took half a day. Three months later, every JS3 exam runs on Examly.",
     name: "Mr. Nwosu",
     role: "Vice Principal, Atlantic Hall Epe",
     bg: "#FBFAF6",
@@ -259,7 +282,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-nwosu"),
   },
   {
-    quote: "Our pass rate on JAMB went up 18 points after we ran daily Examly drills for one term.",
+    quote:
+      "Our pass rate on JAMB went up 18 points after we ran daily Examly drills for one term.",
     name: "Dr. Akinola",
     role: "Head of Sciences, Babcock University",
     bg: "#C5764C",
@@ -268,7 +292,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-akinola"),
   },
   {
-    quote: "Examly's adaptive engine knew I was weak in calculus before I did. It built me a study plan in 30 seconds.",
+    quote:
+      "Examly's adaptive engine knew I was weak in calculus before I did. It built me a study plan in 30 seconds.",
     name: "Chinwe Adeyemi",
     role: "A-Level Student, Lekki British School",
     bg: "#EFEEEA",
@@ -277,7 +302,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-chinwe"),
   },
   {
-    quote: "Proctoring just works. Zero incidents across eight mocks this year — that's a first for us.",
+    quote:
+      "Proctoring just works. Zero incidents across eight mocks this year — that's a first for us.",
     name: "Mr. Bassey",
     role: "Director of Curriculum, Vivian Fowler Memorial",
     bg: "#9A99B6",
@@ -286,7 +312,8 @@ const TESTIMONIALS: Testimonial[] = [
     avatar: AVATAR("examly-bassey"),
   },
   {
-    quote: "For the price of one part-time invigilator we get infrastructure that used to need a full IT team. It just paid for itself.",
+    quote:
+      "For the price of one part-time invigilator we get infrastructure that used to need a full IT team. It just paid for itself.",
     name: "Mr. Akande",
     role: "Founder, Olashore International",
     bg: "#0A0B0E",
@@ -298,9 +325,22 @@ const TESTIMONIALS: Testimonial[] = [
 
 // ── SECTION LABEL ─────────────────────────────────────────────────────────────
 
-function SectionLabel({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
+function SectionLabel({
+  children,
+  dark = false,
+}: {
+  children: React.ReactNode;
+  dark?: boolean;
+}) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 28,
+      }}
+    >
       <span
         style={{
           width: 0,
@@ -329,9 +369,6 @@ function SectionLabel({ children, dark = false }: { children: React.ReactNode; d
 
 function Navbar() {
   const wrap = useRef<HTMLDivElement>(null);
-  // `atTop` = scroll position at top of page; `openMenu` = mega-menu hovered
-  // open. Either condition forces the nav into light mode (white surface,
-  // dark text) because the dropdown panel is always light.
   const [atTop, setAtTop] = useState(true);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -359,7 +396,13 @@ function Navbar() {
       gsap.fromTo(
         wrap.current,
         { yPercent: -100, opacity: 0 },
-        { yPercent: 0, opacity: 1, duration: 0.9, ease: "power3.out", delay: 0.1 }
+        {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.9,
+          ease: "power3.out",
+          delay: 0.1,
+        },
       );
     });
 
@@ -372,24 +415,35 @@ function Navbar() {
       const dy = y - lastY;
       const top = y < TOP_THRESHOLD;
       setAtTop(top);
-      // Don't auto-hide while a menu is open
       if (openRef.current) {
         lastY = y;
         return;
       }
       if (top) {
         if (hidden) {
-          gsap.to(wrap.current, { yPercent: 0, duration: 0.35, ease: "power2.out" });
+          gsap.to(wrap.current, {
+            yPercent: 0,
+            duration: 0.35,
+            ease: "power2.out",
+          });
           hidden = false;
         }
       } else if (dy > 4 && y > 80) {
         if (!hidden) {
-          gsap.to(wrap.current, { yPercent: -100, duration: 0.35, ease: "power2.in" });
+          gsap.to(wrap.current, {
+            yPercent: -100,
+            duration: 0.35,
+            ease: "power2.in",
+          });
           hidden = true;
         }
       } else if (dy < -4) {
         if (hidden) {
-          gsap.to(wrap.current, { yPercent: 0, duration: 0.35, ease: "power2.out" });
+          gsap.to(wrap.current, {
+            yPercent: 0,
+            duration: 0.35,
+            ease: "power2.out",
+          });
           hidden = false;
         }
       }
@@ -403,175 +457,220 @@ function Navbar() {
     };
   }, []);
 
-  // Open menu OR being at top of page → light surface
   const light = atTop || !!openMenu;
 
   const fg = light ? "#0A0A0A" : OFF_WHITE;
   const fgMuted = light ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.75)";
   const navBg = light ? "rgba(248,248,247,0.94)" : "rgba(0,0,0,0.72)";
-  const navBorder = light ? "1px solid transparent" : "1px solid rgba(255,255,255,0.04)";
+  const navBorder = light
+    ? "1px solid transparent"
+    : "1px solid rgba(255,255,255,0.04)";
   const btnBorder = light ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.18)";
   const btnHover = light ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.06)";
   const ctaBg = light ? "#0A0A0A" : OFF_WHITE;
   const ctaText = light ? OFF_WHITE : "#0A0A0A";
-  const tx = "color 0.35s ease, background 0.35s ease, border-color 0.35s ease, opacity 0.25s ease";
+  const tx =
+    "color 0.35s ease, background 0.35s ease, border-color 0.35s ease, opacity 0.25s ease";
+
+  const navigate = useNavigate();
+  const { showLoader } = useLoader();
 
   return (
     <>
-    <div
-      ref={wrap}
-      onMouseEnter={() => closeT.current && window.clearTimeout(closeT.current)}
-      onMouseLeave={handleLeave}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        background: navBg,
-        backdropFilter: "blur(20px)",
-        borderBottom: navBorder,
-        transition: tx,
-      }}
-    >
-    <nav
-      className="r-nav"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "22px 40px",
-      }}
-    >
-      <div className="r-nav-cluster" style={{ display: "flex", alignItems: "center", gap: 48 }}>
-        <a href="#" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <span
-            style={{
-              width: 0,
-              height: 0,
-              borderTop: `13px solid ${fg}`,
-              borderLeft: "13px solid transparent",
-              transition: tx,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              color: fg,
-              letterSpacing: "-0.5px",
-              transition: tx,
-            }}
+      <div
+        ref={wrap}
+        onMouseEnter={() =>
+          closeT.current && window.clearTimeout(closeT.current)
+        }
+        onMouseLeave={handleLeave}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          background: navBg,
+          backdropFilter: "blur(20px)",
+          borderBottom: navBorder,
+          transition: tx,
+        }}
+      >
+        <nav
+          className="r-nav"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "22px 40px",
+          }}
+        >
+          <div
+            className="r-nav-cluster"
+            style={{ display: "flex", alignItems: "center", gap: 48 }}
           >
-            examly
-          </span>
-        </a>
-        <div className="r-hide-mobile" style={{ display: "flex", gap: 32 }}>
-          {NAV_LINKS.map((item) => {
-            const isOpen = openMenu === item;
-            const dimmed = openMenu && !isOpen;
-            return (
-              <a
-                key={item}
-                href="#"
-                onMouseEnter={() => handleEnter(MEGA_MENUS[item] ? item : null)}
+            <Link
+              to="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                textDecoration: "none",
+              }}
+            >
+              <span
                 style={{
-                  color: isOpen ? fg : dimmed ? "rgba(0,0,0,0.4)" : fgMuted,
-                  fontSize: 14,
-                  fontWeight: isOpen ? 600 : 500,
-                  textDecoration: "none",
+                  width: 0,
+                  height: 0,
+                  borderTop: `13px solid ${fg}`,
+                  borderLeft: "13px solid transparent",
+                  transition: tx,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: fg,
+                  letterSpacing: "-0.5px",
                   transition: tx,
                 }}
               >
-                {item}
-              </a>
-            );
-          })}
-        </div>
-      </div>
-      <div
-        style={{ display: "flex", gap: 12, alignItems: "center" }}
-        onMouseEnter={() => handleEnter(null)}
-      >
-        <button
-          className="r-hide-mobile"
-          style={{
-            background: "transparent",
-            border: `1px solid ${btnBorder}`,
-            borderRadius: 12,
-            padding: "9px 22px",
-            color: fg,
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: "pointer",
-            fontFamily: "inherit",
-            transition: tx,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = btnHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-        >
-          Log In
-        </button>
-        <button
-          style={{
-            background: ctaBg,
-            border: `1px solid ${ctaBg}`,
-            borderRadius: 12,
-            padding: "9px 22px",
-            color: ctaText,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "inherit",
-            transition: `${tx}, transform 0.2s`,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-        >
-          Book Demo
-        </button>
+                examly
+              </span>
+            </Link>
+            <div className="r-hide-mobile" style={{ display: "flex", gap: 32 }}>
+              {NAV_LINKS.map((item) => {
+                const isOpen = openMenu === item;
+                const dimmed = openMenu && !isOpen;
+                return (
+                  <a
+                    key={item}
+                    href="#"
+                    onMouseEnter={() =>
+                      handleEnter(MEGA_MENUS[item] ? item : null)
+                    }
+                    style={{
+                      color: isOpen ? fg : dimmed ? "rgba(0,0,0,0.4)" : fgMuted,
+                      fontSize: 14,
+                      fontWeight: isOpen ? 600 : 500,
+                      textDecoration: "none",
+                      transition: tx,
+                    }}
+                  >
+                    {item}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            style={{ display: "flex", gap: 12, alignItems: "center" }}
+            onMouseEnter={() => handleEnter(null)}
+          >
+            <button
+              className="r-hide-mobile"
+              style={{
+                background: "transparent",
+                border: `1px solid ${btnBorder}`,
+                borderRadius: 12,
+                padding: "9px 22px",
+                color: fg,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: tx,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = btnHover)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              Log In
+            </button>
 
-        {/* Mobile hamburger — only visible at narrow widths */}
-        <button
-          className="r-show-mobile"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Menu"
-          style={{
-            background: "transparent",
-            border: `1px solid ${btnBorder}`,
-            borderRadius: 10,
-            width: 38,
-            height: 38,
-            padding: 0,
-            color: fg,
-            cursor: "pointer",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: tx,
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            {mobileOpen ? (
-              <>
-                <line x1="6" y1="6" x2="18" y2="18" />
-                <line x1="6" y1="18" x2="18" y2="6" />
-              </>
-            ) : (
-              <>
-                <line x1="4" y1="7" x2="20" y2="7" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="4" y1="17" x2="20" y2="17" />
-              </>
-            )}
-          </svg>
-        </button>
+            <button
+              onClick={() => {
+                showLoader();
+
+                setTimeout(() => {
+                  navigate("/getstarted");
+                }, 50);
+              }}
+              style={{
+                background: ctaBg,
+                border: `1px solid ${ctaBg}`,
+                borderRadius: 12,
+                padding: "9px 22px",
+                color: ctaText,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: `${tx}, transform 0.2s`,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-1px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
+            >
+              Book Demo
+            </button>
+
+            <button
+              className="r-show-mobile"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Menu"
+              style={{
+                background: "transparent",
+                border: `1px solid ${btnBorder}`,
+                borderRadius: 10,
+                width: 38,
+                height: 38,
+                padding: 0,
+                color: fg,
+                cursor: "pointer",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: tx,
+              }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              >
+                {mobileOpen ? (
+                  <>
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                    <line x1="6" y1="18" x2="18" y2="6" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="4" y1="7" x2="20" y2="7" />
+                    <line x1="4" y1="12" x2="20" y2="12" />
+                    <line x1="4" y1="17" x2="20" y2="17" />
+                  </>
+                )}
+              </svg>
+            </button>
+          </div>
+        </nav>
+        <MegaPanel openKey={openMenu} />
       </div>
-    </nav>
-    <MegaPanel openKey={openMenu} />
-    </div>
-    {/* Rendered as a sibling of the navbar so the GSAP transform on `wrap`
-        doesn't make it the containing block for this fixed-positioned drawer */}
-    <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} light={light} />
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        light={light}
+      />
     </>
   );
 }
@@ -587,14 +686,12 @@ function MobileMenu({
 }) {
   const [sub, setSub] = useState<string | null>(null);
 
-  // Reset sub-panel after the drawer finishes closing
   useEffect(() => {
     if (open) return;
     const t = window.setTimeout(() => setSub(null), 500);
     return () => window.clearTimeout(t);
   }, [open]);
 
-  // Lock body scroll while open
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     return () => {
@@ -602,7 +699,6 @@ function MobileMenu({
     };
   }, [open]);
 
-  // Escape: leave sub-panel first, then close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -624,11 +720,7 @@ function MobileMenu({
   const serif = "'Source Serif 4', 'Iowan Old Style', Georgia, serif";
 
   const subMenu = sub ? MEGA_MENUS[sub] : null;
-
-  // Flatten the 2-column mega-menu data into a single vertical list per category
-  const flatSections = subMenu
-    ? subMenu.columns.flatMap((col) => col)
-    : [];
+  const flatSections = subMenu ? subMenu.columns.flatMap((col) => col) : [];
 
   const handleClose = () => {
     onClose();
@@ -651,7 +743,6 @@ function MobileMenu({
         fontFamily: "inherit",
       }}
     >
-      {/* Sliding container — main and sub panels live side by side */}
       <div
         style={{
           display: "flex",
@@ -661,7 +752,6 @@ function MobileMenu({
           transition: "transform 0.42s cubic-bezier(0.65, 0, 0.35, 1)",
         }}
       >
-        {/* ── MAIN PANEL ── */}
         <div
           style={{
             width: "50%",
@@ -678,10 +768,15 @@ function MobileMenu({
               alignItems: "center",
             }}
           >
-            <a
-              href="#"
+            <Link
+              to="/"
               onClick={handleClose}
-              style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                textDecoration: "none",
+              }}
             >
               <span
                 style={{
@@ -691,10 +786,17 @@ function MobileMenu({
                   borderLeft: "13px solid transparent",
                 }}
               />
-              <span style={{ fontSize: 20, fontWeight: 600, color: fg, letterSpacing: "-0.5px" }}>
+              <span
+                style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: fg,
+                  letterSpacing: "-0.5px",
+                }}
+              >
                 examly
               </span>
-            </a>
+            </Link>
             <button
               onClick={handleClose}
               aria-label="Close menu"
@@ -722,7 +824,10 @@ function MobileMenu({
                   style={{
                     background: "transparent",
                     border: "none",
-                    borderBottom: i === NAV_LINKS.length - 1 ? "none" : `1px solid ${border}`,
+                    borderBottom:
+                      i === NAV_LINKS.length - 1
+                        ? "none"
+                        : `1px solid ${border}`,
                     padding: "26px 0",
                     display: "flex",
                     justifyContent: "space-between",
@@ -737,14 +842,21 @@ function MobileMenu({
                   }}
                 >
                   <span>{item}</span>
-                  <span style={{ color: fgDim, fontSize: 28, fontFamily: "inherit" }}>›</span>
+                  <span
+                    style={{
+                      color: fgDim,
+                      fontSize: 28,
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    ›
+                  </span>
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* ── SUB PANEL ── */}
         <div
           style={{
             width: "50%",
@@ -765,7 +877,10 @@ function MobileMenu({
             <button
               onClick={() => setSub(null)}
               aria-label="Back"
-              style={iconBtn(fg, border, { background: "transparent", border: "none" })}
+              style={iconBtn(fg, border, {
+                background: "transparent",
+                border: "none",
+              })}
             >
               <svg
                 width="22"
@@ -849,7 +964,15 @@ function MobileMenu({
                     }}
                   >
                     <span>{l.label}</span>
-                    <span style={{ color: fgDim, fontSize: 22, fontFamily: "inherit" }}>›</span>
+                    <span
+                      style={{
+                        color: fgDim,
+                        fontSize: 22,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      ›
+                    </span>
                   </a>
                 ))}
               </div>
@@ -858,7 +981,6 @@ function MobileMenu({
         </div>
       </div>
 
-      {/* Floating bottom action card — same on both panels */}
       <div
         style={{
           position: "absolute",
@@ -876,7 +998,8 @@ function MobileMenu({
             : "0 16px 40px rgba(0,0,0,0.5)",
           opacity: open ? 1 : 0,
           transform: open ? "translateY(0)" : "translateY(12px)",
-          transition: "opacity 0.35s 0.25s ease, transform 0.4s 0.2s cubic-bezier(0.22, 1, 0.36, 1)",
+          transition:
+            "opacity 0.35s 0.25s ease, transform 0.4s 0.2s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
         <button
@@ -935,7 +1058,11 @@ function CloseIcon() {
   );
 }
 
-function iconBtn(fg: string, border: string, override?: React.CSSProperties): React.CSSProperties {
+function iconBtn(
+  fg: string,
+  border: string,
+  override?: React.CSSProperties,
+): React.CSSProperties {
   return {
     background: "transparent",
     border: `1px solid ${border}`,
@@ -959,31 +1086,48 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
   const menu = openKey ? MEGA_MENUS[openKey] : null;
   const open = !!menu;
 
-  // Re-run the entrance choreography every time openKey switches to a
-  // different menu. Slow + smooth: text stagger-fades up, images zoom from
-  // 1.08 down to 1 (subtle "settle into place" feel).
   useEffect(() => {
     if (!open || !panelRef.current) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
         ".mp-heading",
         { opacity: 0, y: 18 },
-        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out", stagger: 0.04 }
+        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out", stagger: 0.04 },
       );
       gsap.fromTo(
         ".mp-link",
         { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out", stagger: 0.035, delay: 0.06 }
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.85,
+          ease: "power3.out",
+          stagger: 0.035,
+          delay: 0.06,
+        },
       );
       gsap.fromTo(
         ".mp-media-card",
         { opacity: 0, y: 22 },
-        { opacity: 1, y: 0, duration: 1.0, ease: "power3.out", stagger: 0.08, delay: 0.05 }
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.0,
+          ease: "power3.out",
+          stagger: 0.08,
+          delay: 0.05,
+        },
       );
       gsap.fromTo(
         ".mp-media-img",
         { scale: 1.12 },
-        { scale: 1, duration: 1.6, ease: "power3.out", stagger: 0.05, delay: 0.05 }
+        {
+          scale: 1,
+          duration: 1.6,
+          ease: "power3.out",
+          stagger: 0.05,
+          delay: 0.05,
+        },
       );
     }, panelRef);
     return () => ctx.revert();
@@ -996,7 +1140,8 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
         overflow: "hidden",
         maxHeight: open ? 540 : 0,
         opacity: open ? 1 : 0,
-        transition: "max-height 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease",
+        transition:
+          "max-height 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease",
       }}
     >
       {menu && (
@@ -1012,7 +1157,10 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
           }}
         >
           {[0, 1].map((ci) => (
-            <div key={ci} style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+            <div
+              key={ci}
+              style={{ display: "flex", flexDirection: "column", gap: 32 }}
+            >
               {(menu.columns[ci] || []).map((section, si) => (
                 <div key={si}>
                   {section.heading && (
@@ -1044,8 +1192,12 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
                             gap: 6,
                             transition: "color 0.2s",
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(0,0,0,0.55)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = "#0A0A0A")}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = "rgba(0,0,0,0.55)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "#0A0A0A")
+                          }
                         >
                           {l.label}
                           <span className="mp-arrow">›</span>
@@ -1058,7 +1210,6 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
             </div>
           ))}
 
-          {/* Media column */}
           <div style={{ display: "flex", flexDirection: "column" }}>
             {menu.media.kind === "feature" ? (
               <a
@@ -1139,7 +1290,14 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
                 </div>
               </a>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, height: 380 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 14,
+                  height: 380,
+                }}
+              >
                 {menu.media.items.map((c, i) => (
                   <a
                     key={i}
@@ -1223,13 +1381,6 @@ function MegaPanel({ openKey }: { openKey: string | null }) {
 }
 
 // ── SCROLL CHOREOGRAPHY ───────────────────────────────────────────────────────
-// One video element morphs through 5 scroll-driven stages:
-//   1. Hero (full-width, centered)
-//   2. Applications  (right side, tilted +Y)
-//   3. Reliable      (centered, face-on)
-//   4. Data          (left side, tilted -Y)
-//   5. Ninety        (small bracketed tile, parked left of the green statement)
-// After stage 5, the sticky section ends and the page resumes (Latest, Footer).
 
 function Choreography() {
   const wrap = useRef<HTMLDivElement>(null);
@@ -1241,9 +1392,6 @@ function Choreography() {
   const greenBlock = useRef<HTMLDivElement>(null);
   const greenH = useRef<HTMLHeadingElement>(null);
 
-  // Video pool: pick one at random on mount, then cycle to a different random
-  // clip whenever the current one ends. videoIdx starts at -1 (sentinel) and
-  // gets randomised inside useEffect to keep render pure.
   const videoEl = useRef<HTMLVideoElement>(null);
   const videoIdx = useRef(-1);
 
@@ -1271,7 +1419,8 @@ function Choreography() {
       return;
     }
     let next = videoIdx.current;
-    while (next === videoIdx.current) next = Math.floor(Math.random() * VIDEOS.length);
+    while (next === videoIdx.current)
+      next = Math.floor(Math.random() * VIDEOS.length);
     videoIdx.current = next;
     const src = VIDEOS[next];
     videoEl.current.src = src;
@@ -1282,7 +1431,6 @@ function Choreography() {
     }
   };
 
-  // Each stage text wrapper
   const t1 = useRef<HTMLDivElement>(null);
   const t2 = useRef<HTMLDivElement>(null);
   const t3 = useRef<HTMLDivElement>(null);
@@ -1291,13 +1439,6 @@ function Choreography() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Centre the video frame on its (left:50%, top:50%) anchor.
-      // After this, animate `x` (pixels) — visual centre = viewport centre + x.
-      // Small downward nudge so stage 1 sits below the nav with breathing room;
-      // the actual height clamp lives on the CSS `width` itself (see JSX).
-      // ≤900px (portrait tablets + phones) gets the stacked layout: push the
-      // frame above centre so the dark hero text can sit below it on the
-      // white hero background. Matches the .r-hero-text CSS breakpoint.
       const isStacked = window.matchMedia("(max-width: 900px)").matches;
       gsap.set(frame.current, {
         xPercent: -50,
@@ -1305,8 +1446,10 @@ function Choreography() {
         y: isStacked ? -window.innerHeight * 0.28 : 40,
       });
 
-      // Initial: only stage 1 text visible
-      gsap.set([t2.current, t3.current, t4.current, t5.current, greenBlock.current], { opacity: 0 });
+      gsap.set(
+        [t2.current, t3.current, t4.current, t5.current, greenBlock.current],
+        { opacity: 0 },
+      );
       gsap.set(panels.current, { opacity: 0 });
       gsap.set(edge.current, { opacity: 0 });
       gsap.set(brackets.current, { opacity: 0 });
@@ -1325,10 +1468,13 @@ function Choreography() {
 
       const VW = () => window.innerWidth;
 
-      // ── Stage 1 → 2 ──────────────────────────────────────────────
       tl.addLabel("s1to2")
         .to(t1.current, { opacity: 0, y: -30, duration: 0.4 }, "s1to2")
-        .to(stage.current, { background: BLACK, duration: 0.8, ease: "power2.inOut" }, "s1to2")
+        .to(
+          stage.current,
+          { background: BLACK, duration: 0.8, ease: "power2.inOut" },
+          "s1to2",
+        )
         .to(
           frame.current,
           {
@@ -1341,7 +1487,7 @@ function Choreography() {
             duration: 1,
             ease: "power2.inOut",
           },
-          "s1to2"
+          "s1to2",
         )
         .to(panels.current, { opacity: 1, duration: 0.6 }, "s1to2+=0.3")
         .to(edge.current, { opacity: 1, duration: 0.6 }, "s1to2+=0.4")
@@ -1349,13 +1495,11 @@ function Choreography() {
           t2.current,
           { opacity: 0, y: 40 },
           { opacity: 1, y: 0, duration: 0.6 },
-          "s1to2+=0.5"
+          "s1to2+=0.5",
         );
 
-      // hold stage 2
       tl.to({}, { duration: 0.6 });
 
-      // ── Stage 2 → 3 ──────────────────────────────────────────────
       tl.addLabel("s2to3")
         .to(t2.current, { opacity: 0, y: -30, duration: 0.4 }, "s2to3")
         .to(
@@ -1370,18 +1514,17 @@ function Choreography() {
             duration: 1,
             ease: "power2.inOut",
           },
-          "s2to3"
+          "s2to3",
         )
         .fromTo(
           t3.current,
           { opacity: 0, y: 40 },
           { opacity: 1, y: 0, duration: 0.6 },
-          "s2to3+=0.5"
+          "s2to3+=0.5",
         );
 
       tl.to({}, { duration: 0.6 });
 
-      // ── Stage 3 → 4 ──────────────────────────────────────────────
       tl.addLabel("s3to4")
         .to(t3.current, { opacity: 0, y: -30, duration: 0.4 }, "s3to4")
         .to(
@@ -1396,18 +1539,17 @@ function Choreography() {
             duration: 1,
             ease: "power2.inOut",
           },
-          "s3to4"
+          "s3to4",
         )
         .fromTo(
           t4.current,
           { opacity: 0, y: 40 },
           { opacity: 1, y: 0, duration: 0.6 },
-          "s3to4+=0.5"
+          "s3to4+=0.5",
         );
 
       tl.to({}, { duration: 0.6 });
 
-      // ── Stage 4 → 5 ──────────────────────────────────────────────
       tl.addLabel("s4to5")
         .to(t4.current, { opacity: 0, y: -30, duration: 0.4 }, "s4to5")
         .to(panels.current, { opacity: 0, duration: 0.4 }, "s4to5")
@@ -1424,29 +1566,33 @@ function Choreography() {
             duration: 1,
             ease: "power2.inOut",
           },
-          "s4to5"
+          "s4to5",
         )
         .to(brackets.current, { opacity: 1, duration: 0.5 }, "s4to5+=0.4")
         .fromTo(
           greenBlock.current,
           { opacity: 0, x: 60 },
           { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" },
-          "s4to5+=0.4"
+          "s4to5+=0.4",
         )
         .fromTo(
           t5.current,
           { opacity: 0, y: 40 },
           { opacity: 1, y: 0, duration: 0.6 },
-          "s4to5+=0.5"
+          "s4to5+=0.5",
         );
 
-      // Word-by-word color reveal on the 90% statement
       const words = greenH.current!.querySelectorAll<HTMLElement>(".gw");
       tl.fromTo(
         words,
         { color: "rgba(242,242,239,0.22)" },
-        { color: "rgba(242,242,239,1)", stagger: 0.06, duration: 0.4, ease: "none" },
-        "s4to5+=0.7"
+        {
+          color: "rgba(242,242,239,1)",
+          stagger: 0.06,
+          duration: 0.4,
+          ease: "none",
+        },
+        "s4to5+=0.7",
       );
     }, wrap);
     return () => ctx.revert();
@@ -1466,7 +1612,6 @@ function Choreography() {
           perspectiveOrigin: "50% 50%",
         }}
       >
-        {/* ── Stage Text: HERO (positioned to read alongside the big video) ── */}
         <div
           ref={t1}
           className="r-hero-text"
@@ -1498,7 +1643,12 @@ function Choreography() {
             />
             <span
               className="r-hero-eyebrow"
-              style={{ fontSize: 11, letterSpacing: 2.4, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}
+              style={{
+                fontSize: 11,
+                letterSpacing: 2.4,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.7)",
+              }}
             >
               EXAMLY FOR SCHOOLS
             </span>
@@ -1513,33 +1663,40 @@ function Choreography() {
               marginBottom: 24,
             }}
           >
-            The exam system<br />schools actually trust.
+            The exam system
+            <br />
+            schools actually trust.
           </h1>
-          <button
-            className="r-hero-cta"
-            style={{
-              background: OFF_WHITE,
-              border: "none",
-              borderRadius: 999,
-              padding: "12px 22px",
-              color: "#0A0A0A",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            Get started ›
-          </button>
+          <Link to="/getstarted">
+            <button
+              className="r-hero-cta"
+              style={{
+                background: OFF_WHITE,
+                border: "none",
+                borderRadius: 999,
+                padding: "12px 22px",
+                color: "#0A0A0A",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              Get started ›
+            </button>
+          </Link>
         </div>
 
-        {/* ── Stage Text: APPLICATIONS (left of video) ── */}
         <StageBlock refEl={t2} side="left">
           <SectionLabel>Applications</SectionLabel>
-          <Heading>Exam systems<br />that actually work.</Heading>
+          <Heading>
+            Exam systems
+            <br />
+            that actually work.
+          </Heading>
           <Body>
             Most CBT rollouts in schools fail on exam day. We find the right
             assessment model, build the system, and own the outcome.
@@ -1548,7 +1705,6 @@ function Choreography() {
           <LogoStrip />
         </StageBlock>
 
-        {/* ── Stage Text: RELIABLE (below centered video) ── */}
         <div
           ref={t3}
           className="r-reliable-text"
@@ -1590,10 +1746,13 @@ function Choreography() {
           </p>
         </div>
 
-        {/* ── Stage Text: DATA (right of video) ── */}
         <StageBlock refEl={t4} side="right">
           <SectionLabel>Data</SectionLabel>
-          <Heading>The data powering<br />the country's best schools.</Heading>
+          <Heading>
+            The data powering
+            <br />
+            the country's best schools.
+          </Heading>
           <Body>
             Schools at the frontier run on Examly results. We source insights
             with precision (25% of admins hold advanced degrees in education)
@@ -1602,7 +1761,6 @@ function Choreography() {
           <GreenButton>Explore Data Engine ›</GreenButton>
         </StageBlock>
 
-        {/* ── Stage 5: 90% GREEN BLOCK (right of the tiny video tile) ── */}
         <div
           ref={greenBlock}
           className="r-green-block"
@@ -1650,16 +1808,12 @@ function Choreography() {
           </div>
         </div>
 
-        {/* ── VIDEO FRAME (the morphing element) ── */}
         <div
           ref={frame}
           style={{
             position: "absolute",
             top: "50%",
             left: "50%",
-            // width clamps against viewport WIDTH (94vw), viewport HEIGHT
-            // (so the 16:9 box always fits under the nav with margin), and a
-            // hard 2200px cap on very large screens.
             width: "min(94vw, calc((100vh - 110px) * 16 / 9), 2200px)",
             aspectRatio: "16/9",
             transformOrigin: "center center",
@@ -1668,7 +1822,6 @@ function Choreography() {
             zIndex: 4,
           }}
         >
-          {/* Layered translucent glass panels behind the video, fanned out in 3D space */}
           <div
             ref={panels}
             style={{
@@ -1679,7 +1832,6 @@ function Choreography() {
             }}
           >
             {[0, 1, 2, 3, 4].map((i) => {
-              // Stack panels going INTO the screen using translateZ, with subtle x/y drift
               const zDepth = -(i + 1) * 60;
               const xOff = (i + 1) * 14;
               const yOff = (i + 1) * 6;
@@ -1699,7 +1851,6 @@ function Choreography() {
                 />
               );
             })}
-            {/* binary digit decoration in the 3D space around the stack */}
             {[
               [4, 6, "0111", -40],
               [88, 4, "001", -120],
@@ -1729,7 +1880,6 @@ function Choreography() {
             ))}
           </div>
 
-          {/* The video itself, in a grey-bordered rounded frame */}
           <div
             style={{
               position: "absolute",
@@ -1763,7 +1913,6 @@ function Choreography() {
                   filter: "brightness(0.92) saturate(1.05)",
                 }}
               />
-              {/* Edge-detected duplicate video, white-on-transparent, screen-blended */}
               <video
                 ref={edge}
                 muted
@@ -1782,7 +1931,6 @@ function Choreography() {
                   pointerEvents: "none",
                 }}
               />
-              {/* gradient overlay so text on stage 1 stays readable */}
               <div
                 style={{
                   position: "absolute",
@@ -1795,8 +1943,10 @@ function Choreography() {
             </div>
           </div>
 
-          {/* Stage-5 corner brackets */}
-          <div ref={brackets} style={{ position: "absolute", inset: -6, pointerEvents: "none" }}>
+          <div
+            ref={brackets}
+            style={{ position: "absolute", inset: -6, pointerEvents: "none" }}
+          >
             {[
               { t: 0, l: 0 },
               { t: 0, r: 0 },
@@ -1822,7 +1972,6 @@ function Choreography() {
   );
 }
 
-// Reusable text block placed left or right of the centered video
 function StageBlock({
   refEl,
   side,
@@ -1948,9 +2097,9 @@ function LogoStrip() {
               height: l.h,
               width: "auto",
               objectFit: "contain",
-              // brightness(0) invert(1) recolours a single-tone SVG to white;
-              // for full-colour PNG logos (NECO, JAMB), leave them as-is.
-              filter: l.invert ? "brightness(0) invert(1) opacity(0.85)" : "none",
+              filter: l.invert
+                ? "brightness(0) invert(1) opacity(0.85)"
+                : "none",
               transition: "opacity 0.2s",
             }}
           />
@@ -1960,11 +2109,11 @@ function LogoStrip() {
   );
 }
 
-// ── TESTIMONIALS (bento grid, light background) ───────────────────────────────
-
+// ── TESTIMONIALS ──────────────────────────────────────────────────────────────
 
 function TestimonialCard({ item }: { item: Testimonial }) {
-  const fgDim = item.fg === "#0A0A0A" ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.6)";
+  const fgDim =
+    item.fg === "#0A0A0A" ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.6)";
 
   return (
     <div
@@ -2032,11 +2181,32 @@ function TestimonialCard({ item }: { item: Testimonial }) {
                 : "1px solid rgba(255,255,255,0.15)",
           }}
         />
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: item.fg, letterSpacing: "-0.1px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            minWidth: 0,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: item.fg,
+              letterSpacing: "-0.1px",
+            }}
+          >
             {item.name}
           </span>
-          <span style={{ fontSize: 12.5, color: fgDim, letterSpacing: 0.1, lineHeight: 1.35 }}>
+          <span
+            style={{
+              fontSize: 12.5,
+              color: fgDim,
+              letterSpacing: 0.1,
+              lineHeight: 1.35,
+            }}
+          >
             {item.role}
           </span>
         </div>
@@ -2045,38 +2215,83 @@ function TestimonialCard({ item }: { item: Testimonial }) {
   );
 }
 
-// ── CAPABILITIES (pill tabs + coloured card mockup, à la Anthropic) ──────────
+// ── CAPABILITIES ──────────────────────────────────────────────────────────────
 
 type CapKey = "study" | "practice" | "test" | "review" | "analyze" | "author";
 
 const CAP_ICONS: Record<CapKey, React.ReactNode> = {
   study: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </svg>
   ),
   practice: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
     </svg>
   ),
   test: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="3" y="4" width="18" height="18" rx="2" />
       <path d="M16 2v4M8 2v4M3 10h18" />
       <path d="m9 16 2 2 4-4" />
     </svg>
   ),
   review: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M3 12a9 9 0 1 0 9-9" />
       <path d="M3 4v5h5" />
     </svg>
   ),
   analyze: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M3 3v18h18" />
       <rect x="7" y="11" width="3" height="6" />
       <rect x="13" y="7" width="3" height="10" />
@@ -2084,14 +2299,22 @@ const CAP_ICONS: Record<CapKey, React.ReactNode> = {
     </svg>
   ),
   author: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="16 18 22 12 16 6" />
       <polyline points="8 6 2 12 8 18" />
     </svg>
   ),
 };
 
-// Mobile detection hook for things that can't be done via CSS alone
 function useIsMobile(max = 768) {
   const [m, setM] = useState(false);
   useEffect(() => {
@@ -2103,7 +2326,6 @@ function useIsMobile(max = 768) {
   return m;
 }
 
-// Inline tooltip: dotted-underlined keyword + floating card on hover/tap
 function Tip({
   title,
   body,
@@ -2119,7 +2341,8 @@ function Tip({
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+      if (wrap.current && !wrap.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDoc);
@@ -2229,8 +2452,8 @@ const CAPS: {
           body="Indexed answer keys and marking schemes from 2015 onward, queryable by topic."
         >
           past papers
-        </Tip>
-        {" "}— summaries, formulas, and worked examples in one place.
+        </Tip>{" "}
+        — summaries, formulas, and worked examples in one place.
       </>
     ),
   },
@@ -2374,29 +2597,60 @@ function PromptCard({
   const fg = dark ? "#F2F2EF" : "#0A0A0A";
   const fgDim = dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 380 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        maxWidth: 380,
+      }}
+    >
       <div style={{ background: bg, borderRadius: 14, padding: "16px 18px" }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: fg, marginBottom: 8 }}>Prompt</div>
-        <div style={{ fontSize: 14, color: fgDim, lineHeight: 1.55 }}>{prompt}</div>
+        <div
+          style={{ fontSize: 12, fontWeight: 600, color: fg, marginBottom: 8 }}
+        >
+          Prompt
+        </div>
+        <div style={{ fontSize: 14, color: fgDim, lineHeight: 1.55 }}>
+          {prompt}
+        </div>
       </div>
       {attachments && attachments.length > 0 && (
         <div style={{ background: bg, borderRadius: 14, padding: "16px 18px" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: fg, marginBottom: 12 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: fg,
+              marginBottom: 12,
+            }}
+          >
             Attachments
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+          >
             {attachments.map((a) => (
               <div
                 key={a.name}
                 style={{
-                  background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
+                  background: dark
+                    ? "rgba(255,255,255,0.04)"
+                    : "rgba(0,0,0,0.04)",
                   border: `1px solid ${dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
                   borderRadius: 10,
                   padding: 12,
                   fontSize: 12,
                 }}
               >
-                <div style={{ color: fg, fontWeight: 500, marginBottom: 4, lineHeight: 1.3 }}>
+                <div
+                  style={{
+                    color: fg,
+                    fontWeight: 500,
+                    marginBottom: 4,
+                    lineHeight: 1.3,
+                  }}
+                >
                   {a.name}
                 </div>
                 <div style={{ color: fgDim, marginBottom: 12 }}>{a.meta}</div>
@@ -2418,30 +2672,69 @@ function StudyMockup() {
         borderRadius: 16,
         padding: "36px 40px",
         color: "#0A0A0A",
-        fontFamily: "'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif",
+        fontFamily:
+          "'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif",
         maxWidth: 580,
       }}
     >
-      <h3 style={{ fontSize: 30, fontWeight: 700, margin: 0, marginBottom: 4, lineHeight: 1.15 }}>
+      <h3
+        style={{
+          fontSize: 30,
+          fontWeight: 700,
+          margin: 0,
+          marginBottom: 4,
+          lineHeight: 1.15,
+        }}
+      >
         Quadratic Equations
       </h3>
-      <h3 style={{ fontSize: 22, fontWeight: 600, margin: 0, marginBottom: 22, color: "rgba(0,0,0,0.7)" }}>
+      <h3
+        style={{
+          fontSize: 22,
+          fontWeight: 600,
+          margin: 0,
+          marginBottom: 22,
+          color: "rgba(0,0,0,0.7)",
+        }}
+      >
         SS3 Mathematics study guide
       </h3>
-      <h4 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 12 }}>Table of contents</h4>
-      <ul style={{ margin: 0, paddingLeft: 22, fontSize: 15, color: "#1A1A1A", lineHeight: 1.7 }}>
+      <h4
+        style={{ fontSize: 18, fontWeight: 700, margin: 0, marginBottom: 12 }}
+      >
+        Table of contents
+      </h4>
+      <ul
+        style={{
+          margin: 0,
+          paddingLeft: 22,
+          fontSize: 15,
+          color: "#1A1A1A",
+          lineHeight: 1.7,
+        }}
+      >
         <li>Standard form and roots</li>
         <li>Completing the square</li>
         <li>The quadratic formula</li>
         <li>Discriminant & nature of roots</li>
         <li>Worked WAEC past questions</li>
       </ul>
-      <h4 style={{ fontSize: 18, fontWeight: 700, margin: 0, marginTop: 24, marginBottom: 10 }}>
+      <h4
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          margin: 0,
+          marginTop: 24,
+          marginBottom: 10,
+        }}
+      >
         Quadratic formula
       </h4>
-      <p style={{ fontSize: 14.5, color: "#1A1A1A", lineHeight: 1.7, margin: 0 }}>
-        <strong>For ax² + bx + c = 0:</strong> x = ( −b ± √(b² − 4ac) ) / 2a. Use the discriminant
-        Δ = b² − 4ac to tell the nature of the roots.
+      <p
+        style={{ fontSize: 14.5, color: "#1A1A1A", lineHeight: 1.7, margin: 0 }}
+      >
+        <strong>For ax² + bx + c = 0:</strong> x = ( −b ± √(b² − 4ac) ) / 2a.
+        Use the discriminant Δ = b² − 4ac to tell the nature of the roots.
       </p>
     </div>
   );
@@ -2459,8 +2752,18 @@ function PracticeMockup() {
         maxWidth: "100%",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 18, fontSize: 12, letterSpacing: 1.5 }}>
-        <span style={{ color: "rgba(255,255,255,0.55)" }}>PRACTICE · MATHEMATICS</span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 18,
+          fontSize: 12,
+          letterSpacing: 1.5,
+        }}
+      >
+        <span style={{ color: "rgba(255,255,255,0.55)" }}>
+          PRACTICE · MATHEMATICS
+        </span>
         <span style={{ color: "rgba(255,255,255,0.55)" }}>7 / 20</span>
       </div>
       <div
@@ -2472,10 +2775,18 @@ function PracticeMockup() {
           overflow: "hidden",
         }}
       >
-        <div style={{ width: "35%", height: "100%", background: "#2E6F5A", borderRadius: 4 }} />
+        <div
+          style={{
+            width: "35%",
+            height: "100%",
+            background: "#2E6F5A",
+            borderRadius: 4,
+          }}
+        />
       </div>
       <div style={{ fontSize: 15.5, lineHeight: 1.55, marginBottom: 18 }}>
-        Find the value of <em>x</em> in the equation <strong>2x² − 7x + 3 = 0</strong>.
+        Find the value of <em>x</em> in the equation{" "}
+        <strong>2x² − 7x + 3 = 0</strong>.
       </div>
       {[
         { key: "A", text: "x = 1/2 or x = 3", correct: false },
@@ -2489,7 +2800,9 @@ function PracticeMockup() {
             key={o.key}
             style={{
               border: `1px solid ${selected ? "rgba(46,111,90,0.6)" : "rgba(255,255,255,0.08)"}`,
-              background: selected ? "rgba(46,111,90,0.14)" : "rgba(255,255,255,0.02)",
+              background: selected
+                ? "rgba(46,111,90,0.14)"
+                : "rgba(255,255,255,0.02)",
               borderRadius: 10,
               padding: "11px 14px",
               marginBottom: 8,
@@ -2500,7 +2813,9 @@ function PracticeMockup() {
               gap: 12,
             }}
           >
-            <span style={{ fontWeight: 700, fontSize: 13, opacity: 0.85 }}>{o.key}.</span>
+            <span style={{ fontWeight: 700, fontSize: 13, opacity: 0.85 }}>
+              {o.key}.
+            </span>
             <span>{o.text.replace(", selected", "")}</span>
           </div>
         );
@@ -2537,9 +2852,23 @@ function TestMockup() {
         border: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 18,
+        }}
+      >
         <div>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 11,
+              letterSpacing: 2,
+              color: "rgba(255,255,255,0.5)",
+              marginBottom: 4,
+            }}
+          >
             WAEC MOCK · CHEMISTRY
           </div>
           <div style={{ fontSize: 18, fontWeight: 700 }}>Question 14 / 50</div>
@@ -2571,9 +2900,15 @@ function TestMockup() {
           marginBottom: 16,
         }}
       >
-        Which of the following gases would be liberated when dilute sulphuric acid reacts with zinc metal?
+        Which of the following gases would be liberated when dilute sulphuric
+        acid reacts with zinc metal?
       </div>
-      {["A.  Oxygen", "B.  Hydrogen", "C.  Sulphur dioxide", "D.  Carbon dioxide"].map((opt) => (
+      {[
+        "A.  Oxygen",
+        "B.  Hydrogen",
+        "C.  Sulphur dioxide",
+        "D.  Carbon dioxide",
+      ].map((opt) => (
         <div
           key={opt}
           style={{
@@ -2634,10 +2969,25 @@ function ReviewMockup() {
         maxWidth: "100%",
       }}
     >
-      <div style={{ fontSize: 12, letterSpacing: 1.8, color: "rgba(0,0,0,0.5)", marginBottom: 6, fontWeight: 600 }}>
+      <div
+        style={{
+          fontSize: 12,
+          letterSpacing: 1.8,
+          color: "rgba(0,0,0,0.5)",
+          marginBottom: 6,
+          fontWeight: 600,
+        }}
+      >
         QUESTION 14 · CHEMISTRY MOCK
       </div>
-      <div style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.55, marginBottom: 18 }}>
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 500,
+          lineHeight: 1.55,
+          marginBottom: 18,
+        }}
+      >
         Which gas is liberated when dilute H₂SO₄ reacts with zinc metal?
       </div>
       <div
@@ -2655,7 +3005,8 @@ function ReviewMockup() {
           textDecoration: "line-through",
         }}
       >
-        <span style={{ fontWeight: 700 }}>Your answer ·</span> C. Sulphur dioxide
+        <span style={{ fontWeight: 700 }}>Your answer ·</span> C. Sulphur
+        dioxide
       </div>
       <div
         style={{
@@ -2673,14 +3024,37 @@ function ReviewMockup() {
       >
         <span style={{ fontWeight: 700 }}>Correct ·</span> B. Hydrogen
       </div>
-      <div style={{ fontSize: 12, letterSpacing: 1.5, color: "rgba(0,0,0,0.5)", marginBottom: 6, fontWeight: 600 }}>
+      <div
+        style={{
+          fontSize: 12,
+          letterSpacing: 1.5,
+          color: "rgba(0,0,0,0.5)",
+          marginBottom: 6,
+          fontWeight: 600,
+        }}
+      >
         EXPLANATION
       </div>
-      <p style={{ fontSize: 14, color: "rgba(0,0,0,0.7)", lineHeight: 1.6, margin: 0 }}>
-        Reactive metals above hydrogen in the activity series displace H from dilute non-oxidising acids.
-        Zn + H₂SO₄ → ZnSO₄ + H₂↑. SO₂ would only appear with concentrated, hot H₂SO₄.
+      <p
+        style={{
+          fontSize: 14,
+          color: "rgba(0,0,0,0.7)",
+          lineHeight: 1.6,
+          margin: 0,
+        }}
+      >
+        Reactive metals above hydrogen in the activity series displace H from
+        dilute non-oxidising acids. Zn + H₂SO₄ → ZnSO₄ + H₂↑. SO₂ would only
+        appear with concentrated, hot H₂SO₄.
       </p>
-      <div style={{ marginTop: 18, fontSize: 13, color: "#2E6F5A", fontWeight: 600 }}>
+      <div
+        style={{
+          marginTop: 18,
+          fontSize: 13,
+          color: "#2E6F5A",
+          fontWeight: 600,
+        }}
+      >
         Related practice — Activity series of metals →
       </div>
     </div>
@@ -2707,14 +3081,36 @@ function AnalyzeMockup() {
         maxWidth: "100%",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 22,
+        }}
+      >
         <div>
-          <div style={{ fontSize: 12, letterSpacing: 1.8, color: "rgba(0,0,0,0.5)", marginBottom: 4, fontWeight: 600 }}>
+          <div
+            style={{
+              fontSize: 12,
+              letterSpacing: 1.8,
+              color: "rgba(0,0,0,0.5)",
+              marginBottom: 4,
+              fontWeight: 600,
+            }}
+          >
             LAST 4 MOCKS · BY SUBJECT
           </div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>Performance trend</div>
         </div>
-        <div style={{ display: "flex", gap: 10, fontSize: 11, color: "rgba(0,0,0,0.55)" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            fontSize: 11,
+            color: "rgba(0,0,0,0.55)",
+          }}
+        >
           {["M1", "M2", "M3", "M4"].map((m) => (
             <span key={m}>{m}</span>
           ))}
@@ -2722,8 +3118,13 @@ function AnalyzeMockup() {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {data.map((row) => (
-          <div key={row.sub} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 78, fontSize: 13, fontWeight: 500 }}>{row.sub}</div>
+          <div
+            key={row.sub}
+            style={{ display: "flex", alignItems: "center", gap: 14 }}
+          >
+            <div style={{ width: 78, fontSize: 13, fontWeight: 500 }}>
+              {row.sub}
+            </div>
             <div style={{ flex: 1, display: "flex", gap: 4, height: 22 }}>
               {row.scores.map((s, i) => (
                 <div
@@ -2739,7 +3140,15 @@ function AnalyzeMockup() {
                 />
               ))}
             </div>
-            <div style={{ width: 36, fontSize: 13, fontVariantNumeric: "tabular-nums", textAlign: "right", fontWeight: 600 }}>
+            <div
+              style={{
+                width: 36,
+                fontSize: 13,
+                fontVariantNumeric: "tabular-nums",
+                textAlign: "right",
+                fontWeight: 600,
+              }}
+            >
               {row.scores[row.scores.length - 1]}
             </div>
           </div>
@@ -2757,8 +3166,8 @@ function AnalyzeMockup() {
           lineHeight: 1.5,
         }}
       >
-        <strong>Pattern · </strong>Maths up 23 points across 4 mocks. Chemistry slipping — focus practice
-        here.
+        <strong>Pattern · </strong>Maths up 23 points across 4 mocks. Chemistry
+        slipping — focus practice here.
       </div>
     </div>
   );
@@ -2782,7 +3191,16 @@ function AuthorMockup() {
     >
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
         {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
-          <span key={c} style={{ width: 11, height: 11, borderRadius: "50%", background: c, opacity: 0.55 }} />
+          <span
+            key={c}
+            style={{
+              width: 11,
+              height: 11,
+              borderRadius: "50%",
+              background: c,
+              opacity: 0.55,
+            }}
+          />
         ))}
       </div>
       <div style={{ color: "rgba(255,255,255,0.55)" }}>
@@ -2792,19 +3210,32 @@ function AuthorMockup() {
       <div>* 30 questions · mixed difficulty</div>
       <br />
       <div style={{ color: "rgba(255,255,255,0.55)" }}>Generating items...</div>
-      <div style={{ color: "#9FD9C0" }}>✓ Cell biology and organisation: 6 questions</div>
-      <div style={{ color: "#9FD9C0" }}>✓ Genetics &amp; heredity: 8 questions</div>
+      <div style={{ color: "#9FD9C0" }}>
+        ✓ Cell biology and organisation: 6 questions
+      </div>
+      <div style={{ color: "#9FD9C0" }}>
+        ✓ Genetics &amp; heredity: 8 questions
+      </div>
       <div style={{ color: "#9FD9C0" }}>✓ Ecology: 7 questions</div>
       <div style={{ color: "#9FD9C0" }}>✓ Evolution: 4 questions</div>
-      <div style={{ color: "#9FD9C0" }}>✓ Plant &amp; animal physiology: 5 questions</div>
+      <div style={{ color: "#9FD9C0" }}>
+        ✓ Plant &amp; animal physiology: 5 questions
+      </div>
       <br />
-      <div style={{ color: "rgba(255,255,255,0.55)" }}>Tagging by topic and difficulty...</div>
-      <div style={{ color: "rgba(255,255,255,0.55)" }}>Building answer keys with explanations...</div>
+      <div style={{ color: "rgba(255,255,255,0.55)" }}>
+        Tagging by topic and difficulty...
+      </div>
+      <div style={{ color: "rgba(255,255,255,0.55)" }}>
+        Building answer keys with explanations...
+      </div>
       <br />
       <div>
-        Paper ready · <span style={{ color: "#9FD9C0" }}>biology-ss3-mock-04.pdf</span>
+        Paper ready ·{" "}
+        <span style={{ color: "#9FD9C0" }}>biology-ss3-mock-04.pdf</span>
       </div>
-      <div style={{ color: "rgba(255,255,255,0.55)" }}>Publish to SS3 cohort? <span style={{ color: "#9FD9C0" }}>(y/N)</span></div>
+      <div style={{ color: "rgba(255,255,255,0.55)" }}>
+        Publish to SS3 cohort? <span style={{ color: "#9FD9C0" }}>(y/N)</span>
+      </div>
     </div>
   );
 }
@@ -2812,7 +3243,15 @@ function AuthorMockup() {
 function CapContent({ k }: { k: CapKey }) {
   if (k === "study") {
     return (
-      <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         <PromptCard
           prompt="Build me a study guide for quadratic equations with worked examples and 5 WAEC-style practice problems."
           attachments={[
@@ -2826,7 +3265,15 @@ function CapContent({ k }: { k: CapKey }) {
   }
   if (k === "practice") {
     return (
-      <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         <PracticeMockup />
         <PromptCard prompt="Drill me on coordinate geometry. Mix easy and hard. 20 questions, no time limit." />
       </div>
@@ -2834,7 +3281,15 @@ function CapContent({ k }: { k: CapKey }) {
   }
   if (k === "test") {
     return (
-      <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         <TestMockup />
         <PromptCard prompt="Run a WAEC mock for Chemistry. 50 questions, 2 hours, proctored. No going back to previous questions." />
       </div>
@@ -2842,7 +3297,15 @@ function CapContent({ k }: { k: CapKey }) {
   }
   if (k === "review") {
     return (
-      <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         <PromptCard prompt="Walk me through every Chemistry question I got wrong last week, grouped by topic. Show worked solutions." />
         <ReviewMockup />
       </div>
@@ -2850,7 +3313,15 @@ function CapContent({ k }: { k: CapKey }) {
   }
   if (k === "analyze") {
     return (
-      <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         <AnalyzeMockup />
         <PromptCard
           prompt="Compare my last 4 mock results across subjects. Where am I improving fastest and where am I stalling?"
@@ -2861,7 +3332,15 @@ function CapContent({ k }: { k: CapKey }) {
   }
   // author
   return (
-    <div style={{ display: "flex", gap: 40, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 40,
+        alignItems: "center",
+        flexWrap: "wrap",
+        justifyContent: "center",
+      }}
+    >
       <AuthorMockup />
       <PromptCard prompt="> examly build me a 30-question Biology paper at WAEC standard, mixed difficulty, with answer key." />
     </div>
@@ -2877,8 +3356,6 @@ function Capabilities() {
   const isMobile = useIsMobile();
 
   const activeIdx = CAPS.findIndex((c) => c.key === active);
-  // On mobile: show first 2 + active (or first 3 if active is in first 2),
-  // then push the remaining tabs into a "⋯" overflow menu.
   const visibleIdxs = isMobile
     ? activeIdx < 2
       ? [0, 1, 2]
@@ -2888,25 +3365,27 @@ function Capabilities() {
     ? CAPS.map((_, i) => i).filter((i) => !visibleIdxs.includes(i))
     : [];
 
-  // Quick crossfade on tab switch
   useEffect(() => {
     if (!cardRef.current) return;
     gsap.fromTo(
       cardRef.current,
       { opacity: 0.0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }
+      { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
     );
   }, [active]);
 
-  // Close the overflow dropdown on outside click + Escape
   useEffect(() => {
     if (!overflowOpen) return;
     const onDoc = (e: MouseEvent) => {
-      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+      if (
+        overflowRef.current &&
+        !overflowRef.current.contains(e.target as Node)
+      ) {
         setOverflowOpen(false);
       }
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOverflowOpen(false);
+    const onKey = (e: KeyboardEvent) =>
+      e.key === "Escape" && setOverflowOpen(false);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -2915,7 +3394,6 @@ function Capabilities() {
     };
   }, [overflowOpen]);
 
-  // Reset overflow open state when switching tabs
   useEffect(() => {
     setOverflowOpen(false);
   }, [active]);
@@ -2928,10 +3406,14 @@ function Capabilities() {
         color: OFF_WHITE,
       }}
     >
-      {/* Pill tab bar */}
       <div
         className="r-cap-pills"
-        style={{ display: "flex", justifyContent: "center", marginBottom: 32, position: "relative" }}
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: 32,
+          position: "relative",
+        }}
       >
         <div
           ref={overflowRef}
@@ -2972,10 +3454,13 @@ function Capabilities() {
                   if (!on) e.currentTarget.style.color = OFF_WHITE;
                 }}
                 onMouseLeave={(e) => {
-                  if (!on) e.currentTarget.style.color = "rgba(255,255,255,0.5)";
+                  if (!on)
+                    e.currentTarget.style.color = "rgba(255,255,255,0.5)";
                 }}
               >
-                <span style={{ display: "inline-flex" }}>{CAP_ICONS[c.key]}</span>
+                <span style={{ display: "inline-flex" }}>
+                  {CAP_ICONS[c.key]}
+                </span>
                 {c.label}
               </button>
             );
@@ -2993,7 +3478,9 @@ function Capabilities() {
                 padding: "9px 14px",
                 borderRadius: 999,
                 border: "none",
-                background: overflowOpen ? "rgba(255,255,255,0.08)" : "transparent",
+                background: overflowOpen
+                  ? "rgba(255,255,255,0.08)"
+                  : "transparent",
                 color: overflowOpen ? OFF_WHITE : "rgba(255,255,255,0.5)",
                 fontSize: 18,
                 fontWeight: 600,
@@ -3003,7 +3490,9 @@ function Capabilities() {
                 transition: "color 0.2s, background 0.2s",
               }}
             >
-              <span style={{ lineHeight: 0.5, transform: "translateY(-3px)" }}>…</span>
+              <span style={{ lineHeight: 0.5, transform: "translateY(-3px)" }}>
+                …
+              </span>
             </button>
           )}
 
@@ -3052,11 +3541,16 @@ function Capabilities() {
                       transition: "background 0.15s",
                     }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "rgba(255,255,255,0.06)")
+                      (e.currentTarget.style.background =
+                        "rgba(255,255,255,0.06)")
                     }
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                   >
-                    <span style={{ display: "inline-flex" }}>{CAP_ICONS[c.key]}</span>
+                    <span style={{ display: "inline-flex" }}>
+                      {CAP_ICONS[c.key]}
+                    </span>
                     {c.label}
                   </button>
                 );
@@ -3066,7 +3560,6 @@ function Capabilities() {
         </div>
       </div>
 
-      {/* Coloured card */}
       <div
         ref={cardRef}
         className="r-cap-card"
@@ -3085,7 +3578,6 @@ function Capabilities() {
           transition: "background 0.5s ease",
         }}
       >
-        {/* Subtle organic background lines */}
         <svg
           viewBox="0 0 1000 600"
           preserveAspectRatio="xMidYMid slice"
@@ -3114,7 +3606,6 @@ function Capabilities() {
         </div>
       </div>
 
-      {/* Heading + description below the card */}
       <div
         className="r-cap-meta"
         style={{
@@ -3134,7 +3625,8 @@ function Capabilities() {
             letterSpacing: "-1px",
             margin: 0,
             color: OFF_WHITE,
-            fontFamily: "'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif",
+            fontFamily:
+              "'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif",
           }}
         >
           {cap.heading}
@@ -3154,10 +3646,6 @@ function Capabilities() {
   );
 }
 
-// Stacked-card carousel — front card is fully visible, the next 2 peek out
-// behind it. Clicking next/prev "shuffles" the deck: front card recedes back
-// into the stack, behind cards advance forward, and a new one comes in from
-// the back. Pure CSS transitions on transform + opacity.
 function TestimonialStack() {
   const [front, setFront] = useState(0);
   const N = TESTIMONIALS.length;
@@ -3167,7 +3655,6 @@ function TestimonialStack() {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
-      {/* Stack container — all cards absolutely positioned at centre */}
       <div
         className="r-tstack"
         style={{
@@ -3178,7 +3665,6 @@ function TestimonialStack() {
       >
         {TESTIMONIALS.map((t, i) => {
           const rel = (i - front + N) % N;
-          // Front (0), back-1, back-2 are visible; rest hidden behind
           let translateX = 0;
           let translateY = 0;
           let rotate = 0;
@@ -3207,7 +3693,6 @@ function TestimonialStack() {
             opacity = 0.78;
             zIndex = 20;
           } else {
-            // Way back, invisible. Both directions of cycle land here.
             translateX = 84;
             translateY = -60;
             rotate = 9;
@@ -3241,7 +3726,6 @@ function TestimonialStack() {
         })}
       </div>
 
-      {/* Arrow controls + progress */}
       <div
         style={{
           display: "flex",
@@ -3277,7 +3761,13 @@ function TestimonialStack() {
   );
 }
 
-function ArrowBtn({ dir, onClick }: { dir: "prev" | "next"; onClick: () => void }) {
+function ArrowBtn({
+  dir,
+  onClick,
+}: {
+  dir: "prev" | "next";
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -3314,7 +3804,9 @@ function ArrowBtn({ dir, onClick }: { dir: "prev" | "next"; onClick: () => void 
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ transform: dir === "next" ? "rotate(180deg)" : "rotate(0deg)" }}
+        style={{
+          transform: dir === "next" ? "rotate(180deg)" : "rotate(0deg)",
+        }}
       >
         <path d="M15 18 L9 12 L15 6" />
       </svg>
@@ -3327,7 +3819,6 @@ function Latest() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Heading slides up + fades
       gsap.fromTo(
         ref.current!.querySelector(".lh"),
         { y: 30, opacity: 0 },
@@ -3337,9 +3828,8 @@ function Latest() {
           duration: 1,
           ease: "power3.out",
           scrollTrigger: { trigger: ref.current, start: "top 88%" },
-        }
+        },
       );
-
     });
     return () => ctx.revert();
   }, []);
@@ -3392,20 +3882,26 @@ function Latest() {
   );
 }
 
-// ── KEYCAP (floating 3D button) + GRADE BURST ───────────────────────────────
+// ── KEYCAP + GRADE BURST ──────────────────────────────────────────────────────
 
-// Lazy-init AudioContext so we don't violate browser autoplay policies — the
-// first click is the user gesture that unlocks audio.
 let audioCtx: AudioContext | null = null;
 
 function ensureAudioCtx(): AudioContext | null {
   try {
     if (!audioCtx) {
       const Ctor =
-        (window as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
-          .AudioContext ||
-        (window as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
+        (
+          window as {
+            AudioContext?: typeof AudioContext;
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).AudioContext ||
+        (
+          window as {
+            AudioContext?: typeof AudioContext;
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
       if (!Ctor) return null;
       audioCtx = new Ctor();
     }
@@ -3416,8 +3912,6 @@ function ensureAudioCtx(): AudioContext | null {
   }
 }
 
-// Play one short "pop" at the given fundamental pitch. Called once per
-// particle as it emerges, so the audio is tied to what you see on screen.
 function playPop(pitch: number) {
   const ctx = ensureAudioCtx();
   if (!ctx) return;
@@ -3439,7 +3933,6 @@ function playPop(pitch: number) {
   osc.stop(t + dur + 0.01);
 }
 
-// Each grade has its own pop pitch — top grades = brighter, lower = darker.
 const WAEC_GRADES: { label: string; color: string; pitch: number }[] = [
   { label: "A1", color: "#10B981", pitch: 1380 },
   { label: "B2", color: "#22C55E", pitch: 1240 },
@@ -3471,7 +3964,6 @@ function GradeParticle({
     const el = ref.current;
     if (!el) return;
 
-    // Pseudo-random based on seed to avoid Math.random in render path
     const r = (n: number) => {
       const x = Math.sin(seed * 9301 + n * 49297) * 233280;
       return x - Math.floor(x);
@@ -3485,7 +3977,6 @@ function GradeParticle({
     const duration = 1.6 + r(4) * 0.7;
     const spin = (r(5) - 0.5) * 720;
 
-    // Hidden until our turn comes up
     gsap.set(el, {
       xPercent: -50,
       yPercent: -50,
@@ -3496,7 +3987,6 @@ function GradeParticle({
       rotation: 0,
     });
 
-    // At our scheduled emerge time: play THIS particle's pop, pop into view
     const popCall = gsap.delayedCall(delay, () => playPop(pitch));
     const appear = gsap.to(el, {
       scale: 1,
@@ -3576,7 +4066,14 @@ function Keycap({
 }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [particles, setParticles] = useState<
-    { id: number; grade: string; color: string; pitch: number; seed: number; delay: number }[]
+    {
+      id: number;
+      grade: string;
+      color: string;
+      pitch: number;
+      seed: number;
+      delay: number;
+    }[]
   >([]);
   const nextId = useRef(0);
 
@@ -3600,13 +4097,17 @@ function Keycap({
       duration: 0.1,
       ease: "power2.out",
       onComplete: () => {
-        gsap.to(btn.current, { scale: 1, duration: 0.55, ease: "elastic.out(1, 0.45)" });
+        gsap.to(btn.current, {
+          scale: 1,
+          duration: 0.55,
+          ease: "elastic.out(1, 0.45)",
+        });
       },
     });
 
     if (burst) {
-      // Slight shake — quick lateral jitter that decays
-      gsap.timeline()
+      gsap
+        .timeline()
         .to(btn.current, { x: -5, duration: 0.035, ease: "none" })
         .to(btn.current, { x: 5, duration: 0.04, ease: "none" })
         .to(btn.current, { x: -4, duration: 0.04, ease: "none" })
@@ -3614,16 +4115,12 @@ function Keycap({
         .to(btn.current, { x: -2, duration: 0.04, ease: "none" })
         .to(btn.current, { x: 0, duration: 0.08, ease: "power2.out" });
 
-      // Wake the AudioContext on this user gesture so per-particle pops can fire
       ensureAudioCtx();
 
-      // Haptic kick on supported devices (mobile mostly)
       if (typeof navigator !== "undefined" && navigator.vibrate) {
         navigator.vibrate(22);
       }
 
-      // ~14 particles emerging over ~1s, with an early-biased curve so the
-      // first few come fast (the "pop") then a tapering tail.
       const COUNT = 14;
       const created = Array.from({ length: COUNT }, (_, i) => {
         const g = WAEC_GRADES[Math.floor(Math.random() * WAEC_GRADES.length)];
@@ -3637,16 +4134,16 @@ function Keycap({
         };
       });
       setParticles((prev) => [...prev, ...created]);
-      // Allow time for delays + physics duration + fade-out before unmounting
       window.setTimeout(() => {
-        setParticles((prev) => prev.filter((p) => !created.find((c) => c.id === p.id)));
+        setParticles((prev) =>
+          prev.filter((p) => !created.find((c) => c.id === p.id)),
+        );
       }, 4500);
     }
 
     onActivate();
   };
 
-  // Tuned for a LIGHT footer: cap reads white with cool shadow + soft glow.
   const baseShadow = [
     "0 28px 50px rgba(20,30,55,0.16)",
     "0 10px 22px rgba(20,30,55,0.12)",
@@ -3665,7 +4162,15 @@ function Keycap({
   ].join(", ");
 
   return (
-    <div style={{ position: "absolute", width: 140, height: 140, perspective: 900, ...pos }}>
+    <div
+      style={{
+        position: "absolute",
+        width: 140,
+        height: 140,
+        perspective: 900,
+        ...pos,
+      }}
+    >
       {particles.map((p) => (
         <GradeParticle
           key={p.id}
@@ -3740,7 +4245,6 @@ function Footer() {
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Light footer palette
   const BG = "#E7E8EE";
   const FG = "#0A0A0A";
   const FG_MUTED = "rgba(0,0,0,0.55)";
@@ -3754,11 +4258,9 @@ function Footer() {
         padding: "80px 5% 40px",
         color: FG,
         borderTop: `1px solid ${DIVIDER}`,
-        // Clip falling grade particles so they can't extend the document height
         overflow: "hidden",
       }}
     >
-      {/* ── Top CTA + keycaps ── */}
       <div
         className="r-footer-cta"
         style={{
@@ -3797,7 +4299,8 @@ function Footer() {
               lineHeight: 1.2,
             }}
           >
-            <span style={{ color: FG }}>Try Examly</span> on your next mock today.
+            <span style={{ color: FG }}>Try Examly</span> on your next mock
+            today.
           </p>
           <button
             onClick={scrollTop}
@@ -3830,7 +4333,10 @@ function Footer() {
           </button>
         </div>
 
-        <div className="r-keycaps-wrap" style={{ position: "relative", height: 360 }}>
+        <div
+          className="r-keycaps-wrap"
+          style={{ position: "relative", height: 360 }}
+        >
           <Keycap
             symbol="⌘"
             rotate="rotate(-14deg) rotateX(18deg) rotateY(-22deg)"
@@ -3840,7 +4346,13 @@ function Footer() {
           />
           <Keycap
             symbol={
-              <span style={{ fontSize: 44, lineHeight: 1, transform: "translateY(-4px)" }}>
+              <span
+                style={{
+                  fontSize: 44,
+                  lineHeight: 1,
+                  transform: "translateY(-4px)",
+                }}
+              >
                 ↵
               </span>
             }
@@ -3853,7 +4365,6 @@ function Footer() {
         </div>
       </div>
 
-      {/* ── Logo + link columns ── */}
       <div
         className="r-footer-grid"
         style={{
@@ -3867,7 +4378,14 @@ function Footer() {
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 18,
+            }}
+          >
             <span
               style={{
                 width: 0,
@@ -3876,7 +4394,14 @@ function Footer() {
                 borderLeft: "13px solid transparent",
               }}
             />
-            <span style={{ fontSize: 20, fontWeight: 600, color: FG, letterSpacing: "-0.5px" }}>
+            <span
+              style={{
+                fontSize: 20,
+                fontWeight: 600,
+                color: FG,
+                letterSpacing: "-0.5px",
+              }}
+            >
               examly
             </span>
           </div>
@@ -3890,8 +4415,8 @@ function Footer() {
               marginBottom: 28,
             }}
           >
-            The CBT platform built for the way African schools actually examine —
-            offline-first, district-scale, and exam-day-proof.
+            The CBT platform built for the way African schools actually examine
+            — offline-first, district-scale, and exam-day-proof.
           </p>
           <div style={{ marginBottom: 16 }}>
             <span
@@ -3919,9 +4444,7 @@ function Footer() {
               All systems operational
             </span>
           </div>
-         
 
-          {/* Parent-company stamp à la Anthropic */}
           <div style={{ marginTop: 44 }}>
             <div
               style={{
@@ -3934,7 +4457,14 @@ function Footer() {
             >
               BY SXAINT
             </div>
-            <div style={{ fontSize: 12, color: FG_DIM, marginTop: 6, letterSpacing: "0.5px" }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: FG_DIM,
+                marginTop: 6,
+                letterSpacing: "0.5px",
+              }}
+            >
               © 2026 SXAINT TECHNOLOGIES
             </div>
           </div>
@@ -3966,7 +4496,9 @@ function Footer() {
                       gap: 8,
                       transition: "color 0.2s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = FG_MUTED)}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = FG_MUTED)
+                    }
                     onMouseLeave={(e) => (e.currentTarget.style.color = FG)}
                   >
                     {l.label}
@@ -3993,7 +4525,6 @@ function Footer() {
         ))}
       </div>
 
-      {/* ── Bottom row: socials (left) · language switcher (right) ── */}
       <div
         className="r-footer-bottom"
         style={{
@@ -4011,13 +4542,9 @@ function Footer() {
       >
         <div style={{ display: "flex", gap: 22 }}>
           {[
-            // X
             "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231L18.244 2.25Z",
-            // LinkedIn
             "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.852 3.37-1.852 3.601 0 4.267 2.37 4.267 5.455v6.288zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z",
-            // YouTube
             "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z",
-            // Instagram
             "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z",
           ].map((path, i) => (
             <a
@@ -4035,7 +4562,12 @@ function Footer() {
               onMouseEnter={(e) => (e.currentTarget.style.color = FG)}
               onMouseLeave={(e) => (e.currentTarget.style.color = FG_DIM)}
             >
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="currentColor"
+              >
                 <path d={path} />
               </svg>
             </a>
@@ -4063,7 +4595,8 @@ function LanguageSwitcher() {
   useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+      if (wrap.current && !wrap.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -4097,7 +4630,9 @@ function LanguageSwitcher() {
           gap: 10,
           transition: "background 0.2s, border-color 0.2s",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.04)")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "rgba(0,0,0,0.04)")
+        }
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
         <svg
@@ -4203,7 +4738,7 @@ const MUSIC_TRACKS = [
 function MusicToggle() {
   const audio = useRef<HTMLAudioElement>(null);
   const path = useRef<SVGPathElement>(null);
-  const amp = useRef({ v: 0 }); // current wave amplitude (0 = flat line)
+  const amp = useRef({ v: 0 });
   const phase = useRef({ v: 0 });
   const rafId = useRef<number | null>(null);
   const trackIdx = useRef(-1);
@@ -4218,7 +4753,6 @@ function MusicToggle() {
     return base.replace(/\.[^.]+$/, "");
   };
 
-  // Pick a starting track at random on mount
   useEffect(() => {
     if (!audio.current) return;
     trackIdx.current = Math.floor(Math.random() * MUSIC_TRACKS.length);
@@ -4227,7 +4761,6 @@ function MusicToggle() {
     setTrackLabel(labelFor(trackIdx.current));
   }, []);
 
-  // Cross-fade helper: fade current out, swap src, fade back in (if playing).
   const switchTrack = (next: number) => {
     const el = audio.current;
     if (!el) return;
@@ -4239,14 +4772,21 @@ function MusicToggle() {
       if (playing) {
         el.volume = 0;
         el.play()
-          .then(() => gsap.to(el, { volume: 0.18, duration: 0.5, ease: "power2.out" }))
+          .then(() =>
+            gsap.to(el, { volume: 0.18, duration: 0.5, ease: "power2.out" }),
+          )
           .catch(() => {});
       } else {
         el.volume = 0.18;
       }
     };
     if (playing && !el.paused) {
-      gsap.to(el, { volume: 0, duration: 0.3, ease: "power2.in", onComplete: load });
+      gsap.to(el, {
+        volume: 0,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: load,
+      });
     } else {
       load();
     }
@@ -4270,7 +4810,6 @@ function MusicToggle() {
     switchTrack(n);
   };
 
-  // On track end, advance to the next track (loop) and keep playing if active
   const onEnded = () => {
     if (!audio.current || MUSIC_TRACKS.length === 0) return;
     const next = (trackIdx.current + 1) % MUSIC_TRACKS.length;
@@ -4281,11 +4820,11 @@ function MusicToggle() {
     if (playing) audio.current.play().catch(() => {});
   };
 
-  // Close menu on outside click / Escape
   useEffect(() => {
     if (!menu) return;
     const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(null);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setMenu(null);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenu(null);
     const onScroll = () => setMenu(null);
@@ -4299,8 +4838,6 @@ function MusicToggle() {
     };
   }, [menu]);
 
-  // Continuously render the SVG path based on amp + phase. amp animates between
-  // 0 (paused = flat line) and the active value (playing = sine wave).
   useEffect(() => {
     const W = 22;
     const H = 14;
@@ -4324,9 +4861,6 @@ function MusicToggle() {
     };
   }, []);
 
-  // Phase keeps advancing whether playing or not — the wave is invisible at
-  // amp=0 anyway, so this just guarantees the *fade-out* motion looks like
-  // the wave is still moving as it flattens.
   useEffect(() => {
     const tween = gsap.to(phase.current, {
       v: "+=6.28318",
@@ -4339,7 +4873,6 @@ function MusicToggle() {
     };
   }, []);
 
-  // Amplitude eases between wave height and flat line over ~0.8s.
   useEffect(() => {
     gsap.to(amp.current, {
       v: playing ? 4.5 : 0,
@@ -4354,11 +4887,9 @@ function MusicToggle() {
   const toggle = () => {
     const el = audio.current;
     if (!el) return;
-    // Kill any in-flight volume tween so rapid toggles don't pile up
     gsap.killTweensOf(el, "volume");
 
     if (playing) {
-      // Fade volume to 0, then actually pause
       gsap.to(el, {
         volume: 0,
         duration: FADE,
@@ -4372,7 +4903,11 @@ function MusicToggle() {
       el.volume = 0;
       el.play()
         .then(() => {
-          gsap.to(el, { volume: TARGET_VOL, duration: FADE, ease: "power2.out" });
+          gsap.to(el, {
+            volume: TARGET_VOL,
+            duration: FADE,
+            ease: "power2.out",
+          });
           setPlaying(true);
         })
         .catch(() => {});
@@ -4451,7 +4986,8 @@ function MusicToggle() {
             background: "rgba(20,21,25,0.96)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 12,
-            boxShadow: "0 20px 48px rgba(0,0,0,0.45), 0 6px 16px rgba(0,0,0,0.3)",
+            boxShadow:
+              "0 20px 48px rgba(0,0,0,0.45), 0 6px 16px rgba(0,0,0,0.3)",
             backdropFilter: "blur(14px)",
             padding: 6,
             zIndex: 1200,
@@ -4557,7 +5093,16 @@ function MenuItem({
         transition: "background 0.12s ease",
       }}
     >
-      <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, color: "rgba(255,255,255,0.85)" }}>
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 16,
+          height: 16,
+          color: "rgba(255,255,255,0.85)",
+        }}
+      >
         {icon}
       </span>
       {label}
@@ -4619,10 +5164,9 @@ function CookieBanner() {
   const modal = useRef<HTMLDivElement>(null);
   const scrim = useRef<HTMLDivElement>(null);
 
-  // Show after the intro finishes — long enough that the user isn't bombarded
-  // immediately, short enough they don't think it's missing.
   useEffect(() => {
-    if (typeof localStorage !== "undefined" && localStorage.getItem(COOKIE_KEY)) return;
+    if (typeof localStorage !== "undefined" && localStorage.getItem(COOKIE_KEY))
+      return;
     const t = window.setTimeout(() => setVisible(true), 5200);
     return () => window.clearTimeout(t);
   }, []);
@@ -4632,7 +5176,7 @@ function CookieBanner() {
     gsap.fromTo(
       card.current,
       { y: 60, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }
+      { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" },
     );
   }, [visible]);
 
@@ -4642,11 +5186,15 @@ function CookieBanner() {
       gsap.fromTo(
         modal.current,
         { y: 30, opacity: 0, scale: 0.96 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }
+        { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" },
       );
     }
     if (scrim.current) {
-      gsap.fromTo(scrim.current, { opacity: 0 }, { opacity: 1, duration: 0.25 });
+      gsap.fromTo(
+        scrim.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.25 },
+      );
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSettingsOpen(false);
@@ -4657,7 +5205,10 @@ function CookieBanner() {
 
   const persist = (p: CookiePrefs) => {
     try {
-      localStorage.setItem(COOKIE_KEY, JSON.stringify({ ...p, at: Date.now() }));
+      localStorage.setItem(
+        COOKIE_KEY,
+        JSON.stringify({ ...p, at: Date.now() }),
+      );
     } catch {
       // ignore
     }
@@ -4678,14 +5229,22 @@ function CookieBanner() {
   };
 
   const acceptAll = () => {
-    const p: CookiePrefs = { essential: true, analytics: true, marketing: true };
+    const p: CookiePrefs = {
+      essential: true,
+      analytics: true,
+      marketing: true,
+    };
     setPrefs(p);
     persist(p);
     setSettingsOpen(false);
     hideCard();
   };
   const rejectAll = () => {
-    const p: CookiePrefs = { essential: true, analytics: false, marketing: false };
+    const p: CookiePrefs = {
+      essential: true,
+      analytics: false,
+      marketing: false,
+    };
     setPrefs(p);
     persist(p);
     setSettingsOpen(false);
@@ -4765,13 +5324,18 @@ function CookieBanner() {
               flexShrink: 0,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#F2F2EF")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+            }
           >
             ×
           </button>
         </div>
 
-        <div className="r-cookie-actions" style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
+        <div
+          className="r-cookie-actions"
+          style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}
+        >
           <button
             onClick={() => setSettingsOpen(true)}
             style={{
@@ -4787,8 +5351,12 @@ function CookieBanner() {
               fontFamily: "inherit",
               transition: "background 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(255,255,255,0.06)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "transparent")
+            }
           >
             Customize
           </button>
@@ -4808,8 +5376,12 @@ function CookieBanner() {
               fontFamily: "inherit",
               transition: "background 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(255,255,255,0.06)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "transparent")
+            }
           >
             Reject non-essential
           </button>
@@ -4877,7 +5449,14 @@ function CookieBanner() {
               fontFamily: "inherit",
             }}
           >
-            <div style={{ padding: "28px 28px 8px", display: "flex", alignItems: "flex-start", gap: 16 }}>
+            <div
+              style={{
+                padding: "28px 28px 8px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 16,
+              }}
+            >
               <div style={{ flex: 1 }}>
                 <h3
                   style={{
@@ -4890,7 +5469,14 @@ function CookieBanner() {
                 >
                   Cookie preferences
                 </h3>
-                <p style={{ fontSize: 14, color: "rgba(0,0,0,0.55)", lineHeight: 1.55, margin: 0 }}>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "rgba(0,0,0,0.55)",
+                    lineHeight: 1.55,
+                    margin: 0,
+                  }}
+                >
                   Decide what Examly is allowed to remember about you. You can
                   change this anytime from the footer.
                 </p>
@@ -5065,7 +5651,11 @@ function PrefRow({
             </span>
           )}
         </div>
-        <div style={{ fontSize: 13.5, color: "rgba(0,0,0,0.55)", lineHeight: 1.5 }}>{desc}</div>
+        <div
+          style={{ fontSize: 13.5, color: "rgba(0,0,0,0.55)", lineHeight: 1.5 }}
+        >
+          {desc}
+        </div>
       </div>
       <ToggleSwitch on={on} onChange={onChange} disabled={disabled} />
     </div>
@@ -5117,230 +5707,10 @@ function ToggleSwitch({
   );
 }
 
-// ── LOADING SCREEN ────────────────────────────────────────────────────────────
-// One <polygon> with 4 vertices animates through every stage. The four points
-// slide between three keyframe states without the element ever unmounting or
-// crossfading — the bar literally IS the triangle, just earlier in time.
-//
-//   Stage 1: top-right + bottom-right x slide 0 → 100   (bar fills)
-//   Stage 2: all 4 points slide to triangle positions   (bar opens into ▲)
-//   Stage 3: SVG element scales 1 → 70 from triangle's centroid (covers screen)
-
-type Pt = [number, number];
-
-function pointsToAttr(pts: Pt[]) {
-  return pts.map(([x, y]) => `${x.toFixed(3)},${y.toFixed(3)}`).join(" ");
-}
-
-function LoadingScreen({ onDone }: { onDone: () => void }) {
-  const overlay = useRef<HTMLDivElement>(null);
-  const poly = useRef<SVGPolygonElement>(null);
-  const track = useRef<SVGRectElement>(null);
-  const blackBg = useRef<SVGRectElement>(null);
-  const whiteUse = useRef<SVGUseElement>(null);
-  const counter = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-
-    const writePoly = (s: Record<string, Pt>) => {
-      if (poly.current) {
-        poly.current.setAttribute(
-          "points",
-          pointsToAttr([s.tl, s.tr, s.br, s.bl])
-        );
-      }
-    };
-
-    const lerp = (a: Record<string, Pt>, b: Record<string, Pt>, t: number) => ({
-      tl: [a.tl[0] + (b.tl[0] - a.tl[0]) * t, a.tl[1] + (b.tl[1] - a.tl[1]) * t] as Pt,
-      tr: [a.tr[0] + (b.tr[0] - a.tr[0]) * t, a.tr[1] + (b.tr[1] - a.tr[1]) * t] as Pt,
-      br: [a.br[0] + (b.br[0] - a.br[0]) * t, a.br[1] + (b.br[1] - a.br[1]) * t] as Pt,
-      bl: [a.bl[0] + (b.bl[0] - a.bl[0]) * t, a.bl[1] + (b.bl[1] - a.bl[1]) * t] as Pt,
-    });
-
-    const keyframes = () => {
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const cx = vw / 2;
-      const cy = vh / 2;
-      // Scale bar + small-triangle sizes to the viewport so the intro doesn't
-      // dwarf phone screens. Caps stay at desktop values.
-      const BAR_W = Math.min(220, vw * 0.6);
-      const BAR_H = Math.min(16, vw * 0.04);
-      const triS = Math.min(240, vw * 0.55);
-      const hugeS = Math.max(vw, vh) * 3;
-      return {
-        zero: {
-          tl: [cx - BAR_W / 2, cy - BAR_H / 2],
-          tr: [cx - BAR_W / 2, cy - BAR_H / 2],
-          br: [cx - BAR_W / 2, cy + BAR_H / 2],
-          bl: [cx - BAR_W / 2, cy + BAR_H / 2],
-        } as Record<string, Pt>,
-        bar: {
-          tl: [cx - BAR_W / 2, cy - BAR_H / 2],
-          tr: [cx + BAR_W / 2, cy - BAR_H / 2],
-          br: [cx + BAR_W / 2, cy + BAR_H / 2],
-          bl: [cx - BAR_W / 2, cy + BAR_H / 2],
-        } as Record<string, Pt>,
-        tri: {
-          tl: [cx - (2 * triS) / 3, cy - triS / 3],
-          tr: [cx + triS / 3, cy - triS / 3],
-          br: [cx + triS / 3, cy + (2 * triS) / 3],
-          bl: [cx - (2 * triS) / 3, cy - triS / 3],
-        } as Record<string, Pt>,
-        huge: {
-          tl: [cx - (2 * hugeS) / 3, cy - hugeS / 3],
-          tr: [cx + hugeS / 3, cy - hugeS / 3],
-          br: [cx + hugeS / 3, cy + (2 * hugeS) / 3],
-          bl: [cx - (2 * hugeS) / 3, cy - hugeS / 3],
-        } as Record<string, Pt>,
-      };
-    };
-
-    const positionTrack = () => {
-      if (!track.current) return;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const w = Math.min(220, vw * 0.6);
-      const h = Math.min(16, vw * 0.04);
-      track.current.setAttribute("x", String(vw / 2 - w / 2));
-      track.current.setAttribute("y", String(vh / 2 - h / 2));
-      track.current.setAttribute("width", String(w));
-      track.current.setAttribute("height", String(h));
-    };
-
-    const prog = { p: 0 };
-    const updateShape = () => {
-      const p = prog.p;
-      const k = keyframes();
-      let s: Record<string, Pt>;
-      if (p <= 1) s = lerp(k.zero, k.bar, p);
-      else if (p <= 2) s = lerp(k.bar, k.tri, p - 1);
-      else s = lerp(k.tri, k.huge, p - 2);
-      writePoly(s);
-      positionTrack();
-
-      if (counter.current) {
-        const fillPct = Math.min(p, 1);
-        counter.current.textContent = String(Math.floor(fillPct * 100)).padStart(3, "0");
-      }
-    };
-    updateShape();
-
-    const tl = gsap.timeline();
-
-    // ── Stage 1: visible loading bar (track + white fill) — prog 0 → 1 ──
-    tl.to(prog, { p: 1, duration: 2.0, ease: "power1.inOut", onUpdate: updateShape });
-
-    // ── Stage 2: track fades, bar morphs into triangle (still white on black) ──
-    tl.to(track.current, { opacity: 0, duration: 0.3, ease: "power2.in" });
-    tl.to(
-      prog,
-      { p: 2, duration: 1.0, ease: "power3.inOut", onUpdate: updateShape },
-      "<"
-    );
-    tl.to(counter.current, { opacity: 0, y: 16, duration: 0.5, ease: "power2.in" }, "<");
-
-    // ── Stage 3: black-bg + white-fill fade as the cutout layer is revealed,
-    //            and the triangle grows huge so the page shows through it ──
-    tl.to(
-      [blackBg.current, whiteUse.current],
-      { opacity: 0, duration: 0.5, ease: "power2.in" },
-      "+=0.15"
-    );
-    tl.to(
-      prog,
-      { p: 3, duration: 1.3, ease: "power3.in", onUpdate: updateShape },
-      "<+0.05"
-    );
-    tl.to(overlay.current, { opacity: 0, duration: 0.35, ease: "power2.out" }, "-=0.15");
-
-    tl.call(() => {
-      document.body.style.overflow = "";
-      onDone();
-    });
-
-    const onResize = () => updateShape();
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      tl.kill();
-      window.removeEventListener("resize", onResize);
-      document.body.style.overflow = "";
-    };
-  }, [onDone]);
-
-  return (
-    <div
-      ref={overlay}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 99999,
-        overflow: "hidden",
-        background: "transparent",
-        fontFamily:
-          "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
-      <svg
-        width="100%"
-        height="100%"
-        style={{ position: "absolute", inset: 0, display: "block" }}
-      >
-        <defs>
-          {/* The single morphing polygon lives here, invisible until used */}
-          <polygon ref={poly} id="loader-shape" />
-          <mask id="loader-mask">
-            <rect width="100%" height="100%" fill="white" />
-            {/* Same polygon used as a black "hole" in the mask */}
-            <use href="#loader-shape" fill="black" />
-          </mask>
-        </defs>
-
-        {/* Layer 1 (bottom): black with polygon-shaped hole — page shows through hole */}
-        <rect width="100%" height="100%" fill="#000" mask="url(#loader-mask)" />
-
-        {/* Layer 2: opaque black covering Layer 1 during phases 1–2; fades phase 3 */}
-        <rect ref={blackBg} width="100%" height="100%" fill="#000" />
-
-        {/* Layer 3: track (visible phase 1, fades during phase 2 morph) */}
-        <rect ref={track} fill="rgba(255,255,255,0.16)" />
-
-        {/* Layer 4 (top): same polygon rendered white — the visible "fill" /
-            triangle through phases 1–2; fades out during phase 3 so the cutout
-            beneath becomes the only visible representation of the shape */}
-        <use ref={whiteUse} href="#loader-shape" fill="#fff" />
-      </svg>
-
-      <div
-        ref={counter}
-        style={{
-          position: "absolute",
-          bottom: "clamp(18px, 4vw, 32px)",
-          left: "clamp(18px, 4vw, 32px)",
-          color: "#fff",
-          fontSize: "clamp(44px, 12vw, 72px)",
-          fontWeight: 300,
-          letterSpacing: "-2px",
-          lineHeight: 1,
-          willChange: "transform, opacity",
-        }}
-      >
-        000
-      </div>
-    </div>
-  );
-}
-
 // ── ROOT ──────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [intro, setIntro] = useState(true);
-
   useEffect(() => {
-    // Inter for body, Source Serif 4 for every heading
     const link = document.createElement("link");
     link.href =
       "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap";
@@ -5352,13 +5722,11 @@ export default function Home() {
       body { margin: 0; background: ${BLACK}; }
       ::selection { background: ${GREEN_BRIGHT}; color: ${OFF_WHITE}; }
 
-      /* Serif headings, cascaded site-wide */
       h1, h2, h3, h4, h5, h6 {
         font-family: 'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
         font-feature-settings: "ss01" on, "kern" on;
       }
 
-      /* Custom scrollbar — thin, dark rounded pill on the right */
       html { scrollbar-width: thin; scrollbar-color: #1A1A1A transparent; }
       ::-webkit-scrollbar { width: 10px; height: 10px; }
       ::-webkit-scrollbar-track { background: transparent; }
@@ -5370,7 +5738,6 @@ export default function Home() {
       }
       ::-webkit-scrollbar-thumb:hover { background: #0A0A0A; background-clip: padding-box; }
 
-      /* Mega-menu link arrow: hidden by default, fades in and slides right on hover */
       .mp-link .mp-arrow {
         display: inline-block;
         font-size: 16px;
@@ -5384,14 +5751,6 @@ export default function Home() {
         transform: translateX(6px);
       }
 
-      /* ───── RESPONSIVE ─────
-         Breakpoints (mobile-first overrides cascading widest → narrowest):
-           ≤ 1280px  small laptop
-           ≤ 1024px  tablet landscape
-           ≤ 900px   tablet portrait (hero treats this as "mobile")
-           ≤ 768px   phone landscape / large phone
-           ≤ 480px   phone portrait
-      */
       .r-show-mobile { display: none; }
       *, *::before, *::after { box-sizing: border-box; }
 
@@ -5400,32 +5759,21 @@ export default function Home() {
       }
 
       @media (max-width: 1024px) {
-        /* Navbar tightens further */
         .r-nav { padding: 18px 24px !important; }
         .r-nav-cluster { gap: 32px !important; }
-
-        /* Choreography — shrink stage-block text so the side text doesn't
-           crowd the (still wide) video on landscape tablets */
         .r-stage-block { max-width: 340px !important; }
         .r-stage-block h2 { font-size: clamp(28px, 3.8vw, 44px) !important; margin-bottom: 16px !important; }
         .r-stage-block p { font-size: 15px !important; margin-bottom: 24px !important; }
         .r-green-block { padding: 44px 50px !important; width: 64% !important; }
         .r-green-block h2 { font-size: clamp(30px, 4.4vw, 52px) !important; }
-
-        /* Capabilities — reduce paddings + tighten meta layout */
         .r-cap-card { padding: 50px 40px !important; min-height: 460px !important; }
         .r-cap-meta { grid-template-columns: 220px 1fr !important; gap: 50px !important; margin-top: 44px !important; }
         .r-cap-meta h3 { font-size: 30px !important; }
         .r-cap-meta p { font-size: 16px !important; }
-
-        /* Footer */
         .r-footer-grid { grid-template-columns: 1.4fr 1fr 1fr !important; gap: 40px !important; }
       }
 
       @media (max-width: 900px) {
-        /* Portrait tablet: hero text needs the same "below the video, dark
-           on white bg" treatment as phones because the centred 16:9 frame
-           is too narrow to overlay text on */
         .r-hero-text {
           left: 6% !important;
           right: 6% !important;
@@ -5441,11 +5789,6 @@ export default function Home() {
           background: #0A0A0A !important;
           color: ${OFF_WHITE} !important;
         }
-
-        /* Stage 2 ("Applications") and Stage 4 ("Data") side panels — on
-           narrow screens there's no room next to the video, so they restack
-           below it spanning the full width. The video is small + centred at
-           these stages so a top: ~58% landing point sits clear of it. */
         .r-stage-block {
           top: 58% !important;
           bottom: auto !important;
@@ -5456,12 +5799,8 @@ export default function Home() {
         }
         .r-stage-block h2 { font-size: clamp(26px, 5vw, 40px) !important; line-height: 1.1 !important; margin-bottom: 14px !important; }
         .r-stage-block p { font-size: 15px !important; line-height: 1.55 !important; margin-bottom: 22px !important; }
-
-        /* Capabilities meta stacks at this width */
         .r-cap-meta { grid-template-columns: 1fr !important; gap: 28px !important; }
         .r-cap-meta h3 { font-size: 28px !important; }
-
-        /* Latest bento — collapse to 2-col at portrait tablet */
         .r-latest-grid { grid-template-columns: 1fr 1fr !important; gap: 18px !important; }
         .r-latest-grid > div { grid-column: span 1 !important; }
       }
@@ -5469,14 +5808,8 @@ export default function Home() {
       @media (max-width: 768px) {
         .r-hide-mobile { display: none !important; }
         .r-show-mobile { display: inline-flex !important; }
-
-        /* Navbar */
         .r-nav { padding: 14px 18px !important; }
         .r-nav-cluster { gap: 0 !important; }
-
-        /* Choreography — keep side-text overlays (Applications / Data); the
-           ≤900px rule already restacks them below the video. Just size them
-           down a touch more for phones. */
         .r-stage-block h2 { font-size: clamp(22px, 6.2vw, 32px) !important; }
         .r-stage-block p { font-size: 14px !important; }
         .r-hero-text {
@@ -5498,55 +5831,36 @@ export default function Home() {
         .r-green-block h2 { font-size: clamp(24px, 6.5vw, 36px) !important; }
         .r-reliable-text { left: 16px !important; right: 16px !important; bottom: 6% !important; }
         .r-reliable-text h2 { font-size: clamp(22px, 6vw, 32px) !important; }
-
-        /* Capabilities */
         .r-cap-pills { padding: 0 5% !important; }
         .r-cap-card { padding: 30px 18px !important; min-height: 0 !important; border-radius: 18px !important; margin: 0 12px !important; }
         .r-cap-content { gap: 24px !important; }
         .r-cap-content > * { max-width: 100% !important; }
         .r-cap-meta { grid-template-columns: 1fr !important; gap: 24px !important; }
         .r-cap-meta h3 { font-size: 28px !important; }
-
-        /* Latest bento — single column; cancel custom col-spans */
         .r-latest-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
         .r-latest-grid > div { grid-column: span 1 !important; }
-
-        /* Footer */
         .r-footer-cta { grid-template-columns: 1fr !important; gap: 40px !important; padding-bottom: 60px !important; }
         .r-footer-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
         .r-footer-bottom { flex-direction: column-reverse !important; align-items: flex-start !important; gap: 22px !important; }
         .r-keycaps-wrap { height: 240px !important; }
         .r-keycaps-wrap > div { width: 96px !important; height: 96px !important; }
         .r-keycaps-wrap button { font-size: 38px !important; border-radius: 22px !important; }
-
-        /* Cookie banner */
         .r-cookie { left: 12px !important; right: 12px !important; bottom: 12px !important; width: auto !important; max-width: none !important; padding: 18px !important; }
         .r-cookie-actions { flex-direction: column !important; }
         .r-cookie-actions button { width: 100% !important; flex: 1 1 auto !important; }
-
-        /* Music toggle */
         .r-music { right: 14px !important; bottom: 14px !important; width: 44px !important; height: 44px !important; }
       }
 
       @media (max-width: 480px) {
-        /* Navbar — give the logo and CTA enough room without crowding */
         .r-nav { padding: 12px 14px !important; }
-
-        /* Hero — scale type down so it doesn't crowd the small viewport */
         .r-hero-text h1 { font-size: clamp(22px, 7.5vw, 30px) !important; }
         .r-hero-text .r-hero-cta { padding: 10px 18px !important; font-size: 13px !important; }
-
-        /* Stage 3 + 5 */
         .r-reliable-text h2 { font-size: clamp(20px, 6vw, 28px) !important; }
         .r-green-block { padding: 22px 16px !important; border-radius: 14px !important; }
         .r-green-block h2 { font-size: clamp(20px, 6vw, 28px) !important; }
-
-        /* Capabilities */
         .r-cap-card { padding: 22px 10px !important; }
         .r-cap-meta h3 { font-size: 24px !important; }
         .r-cap-meta p { font-size: 15px !important; }
-
-        /* Cookie + music toggle */
         .r-cookie { padding: 14px !important; }
         .r-music { width: 42px !important; height: 42px !important; right: 12px !important; bottom: 12px !important; }
       }
@@ -5578,7 +5892,6 @@ export default function Home() {
       <Footer />
       <MusicToggle />
       <CookieBanner />
-      {intro && <LoadingScreen onDone={() => setIntro(false)} />}
     </div>
   );
 }
