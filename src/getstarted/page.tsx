@@ -485,9 +485,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
       // 2. Send email verification
       try {
         await sendEmailVerification(user);
-        showSuccess(
-          "Verification email sent to your inbox. Please check your email.",
-        ); // Using global success alert
+        // Using global success alert
       } catch (verifyError) {
         console.error("Email verification error:", verifyError);
         showError(
@@ -512,8 +510,10 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
       // 4. Show success state
       setShowPasswordModal(false);
-      setSubmitted(true);
-      showSuccess("Account created successfully!Please verify your email ");
+      setTimeout(() => {
+        setSubmitted(true);
+        showSuccess("Account created successfully! Please verify your email ");
+      }, 400);
     } catch (error: any) {
       console.error("Registration error:", error);
       showError("Something went wrong, try again"); // Using global error alert
