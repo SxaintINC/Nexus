@@ -1661,6 +1661,9 @@ function Choreography() {
               letterSpacing: "-2.5px",
               margin: 0,
               marginBottom: 24,
+              // background: "linear-gradient(to bottom, #d6d1d1, #ffffff)",
+              //WebkitBackgroundClip: "text",
+              //WebkitTextFillColor: "transparent",
             }}
           >
             The exam system

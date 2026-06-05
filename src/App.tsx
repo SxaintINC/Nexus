@@ -7,18 +7,26 @@ import RouteLoader from "./Loader/routerLoader";
 
 import { LoaderProvider } from "./Loader/loadercontext";
 
+import { AlertProvider } from "./Alert/alertcontext";
+
 function App() {
   return (
     <LoaderProvider>
-      <BrowserRouter>
-        <RouteLoader />
+      <AlertProvider
+        position="bottom-right"
+        maxAlerts={5}
+        defaultDuration={5000}
+      >
+        <BrowserRouter>
+          <RouteLoader />
 
-        <Routes>
-          <Route path="/" element={<Landing />} />
+          <Routes>
+            <Route path="/" element={<Landing />} />
 
-          <Route path="/getstarted" element={<RegistrationForm />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="/getstarted" element={<RegistrationForm />} />
+          </Routes>
+        </BrowserRouter>
+      </AlertProvider>
     </LoaderProvider>
   );
 }

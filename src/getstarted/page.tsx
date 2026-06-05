@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { gsap } from "gsap";
 import { useNavigate } from "react-router-dom";
 import { useLoader } from "../Loader/loadercontext";
@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../Firebase/firebase";
+import { useAlert } from "../Alert/alertcontext";
 
 /* COLORS */
 const BLACK = "#000000";
@@ -28,14 +29,6 @@ function useIsMobile(max = 900) {
 }
 
 type Role = "School Admin" | "Tutor" | "Exam Candidate";
-
-// Alert types for user feedback
-type AlertType = "success" | "error" | "info" | null;
-
-interface AlertState {
-  type: AlertType;
-  message: string;
-}
 
 // Base form data (always present)
 interface BaseFormData {
@@ -170,6 +163,7 @@ async function saveUserToFirestore(
 export default function RegistrationForm({ onClose }: RegistrationFormProps) {
   const navigate = useNavigate();
   const { showLoader } = useLoader();
+  const { showSuccess, showError } = useAlert(); // Use global alert
   const isMobile = useIsMobile();
   const formRef = useRef<HTMLDivElement>(null);
   const fieldsContainerRef = useRef<HTMLDivElement>(null);
@@ -179,7 +173,6 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
   const [passwordError, setPasswordError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [alert, setAlert] = useState<AlertState>({ type: null, message: "" });
   const [hasSelectedRole, setHasSelectedRole] = useState(false);
 
   // Form state - role starts as null, no role fields shown initially
@@ -193,21 +186,6 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Auto-dismiss alert after 5 seconds
-  useEffect(() => {
-    if (alert.type && alert.message) {
-      const timer = setTimeout(() => {
-        setAlert({ type: null, message: "" });
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [alert]);
-
-  // Show alert helper
-  const showAlert = useCallback((type: AlertType, message: string) => {
-    setAlert({ type, message });
-  }, []);
 
   // Derived state for current role data
   const currentRoleData = useMemo(
@@ -234,7 +212,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
     }
   };
 
-  // Helper to update role-specific fields - FIXED VERSION
+  // Helper to update role-specific fields
   const updateRoleData = <
     K extends keyof SchoolAdminData | keyof TutorData | keyof ExamCandidateData,
   >(
@@ -447,7 +425,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
-      showAlert("error", "Please fix the errors before continuing");
+      showError("Please fix the errors before continuing"); // Using global error alert
     }
     return Object.keys(newErrors).length === 0;
   };
@@ -498,7 +476,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
       );
 
       if (createError || !user) {
-        showAlert("error", createError || "Account creation failed");
+        showError(createError || "Account creation failed"); // Using global error alert
         setIsCreatingAccount(false);
         showLoader();
         return;
@@ -507,12 +485,14 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
       // 2. Send email verification
       try {
         await sendEmailVerification(user);
-        showAlert(
-          "success",
+        showSuccess(
           "Verification email sent to your inbox. Please check your email.",
-        );
+        ); // Using global success alert
       } catch (verifyError) {
         console.error("Email verification error:", verifyError);
+        showError(
+          "Failed to send verification email. You can request it later.",
+        ); // Using global error alert
         // Continue anyway - user can request verification later
       }
 
@@ -526,42 +506,30 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
         );
 
       if (!saveSuccess) {
-        showAlert("error", saveError || "Failed to save user data");
+        showError(saveError || "Failed to save user data"); // Using global error alert
         // Account was created but data not saved - could implement retry
-      } else {
-        showAlert("success", "Account created successfully!");
       }
 
       // 4. Show success state
       setShowPasswordModal(false);
       setSubmitted(true);
-      showAlert(
-        "success",
-        "Account created successfully! Verification email sent.",
-      );
-
-      setTimeout(() => {
-        setSubmitted(false);
-        handleClose();
-      }, 40000);
+      showSuccess("Account created successfully!Please verify your email ");
     } catch (error: any) {
       console.error("Registration error:", error);
-      showAlert("error", "Something went wrong, try again");
+      showError("Something went wrong, try again"); // Using global error alert
     } finally {
       setIsCreatingAccount(false);
       showLoader();
     }
   };
 
-  // Close handler
+  // Close handler - FIXED VERSION
   const handleClose = () => {
     if (onClose) {
       onClose();
     } else {
       showLoader();
-      setTimeout(() => {
-        navigate("/");
-      }, 50);
+      navigate("/");
     }
   };
 
@@ -959,63 +927,6 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
   return (
     <div className="fixed inset-0 z-[1001] flex bg-white overflow-hidden">
-      {/* Toast Alert Container - Bottom Right Corner */}
-      {alert.type && alert.message && (
-        <div className="fixed bottom-6 right-6 z-[1200] w-full max-w-md">
-          <div
-            className={`rounded-xl shadow-lg p-4 flex items-center justify-between animate-slide-up ${
-              alert.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : alert.type === "error"
-                  ? "bg-red-50 border border-red-200 text-red-800"
-                  : "bg-blue-50 border border-blue-200 text-blue-800"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {alert.type === "success" && (
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-              {alert.type === "error" && (
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-              <span className="text-sm font-medium">{alert.message}</span>
-            </div>
-            <button
-              onClick={() => setAlert({ type: null, message: "" })}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* LEFT PANEL */}
       {!isMobile && (
         <div
