@@ -484,8 +484,11 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
 
       // 2. Send email verification
       try {
-        await sendEmailVerification(user);
-        // Using global success alert
+        await fetch("http://localhost:5000/send-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: user.email }),
+        }); // Using global success alert
       } catch (verifyError) {
         console.error("Email verification error:", verifyError);
         showError(
