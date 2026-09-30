@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, User, UserCircle, Eye, EyeOff } from "lucide-react";
+import { EnvelopeSimple, Lock, User, UserCircle, Eye, EyeSlash } from "@phosphor-icons/react";
 
 const Getstarted: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -237,7 +237,7 @@ const Getstarted: React.FC = () => {
 
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <Mail size={18} />
+                <EnvelopeSimple size={18} />
               </div>
               <input
                 type="email"
@@ -283,7 +283,7 @@ const Getstarted: React.FC = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
