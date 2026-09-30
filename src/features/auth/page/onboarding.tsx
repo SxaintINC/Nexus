@@ -35,8 +35,7 @@ import {
 import { clearCurrentUser, ensureSession } from "../../../shared/lib/session";
 import { supabase, supabaseReady } from "../../../shared/lib/supabase";
 
-// Persist the wizard's setup to the account's server profile + school row.
-// Best-effort: onboarding works fully offline; the sync just makes the state
+
 // durable across devices and available to the API later.
 async function syncSetupToSupabase(data: Onboarding) {
   if (!supabaseReady) return;
